@@ -84,7 +84,7 @@ function getISOTimestamp() {
 function logException(timestamp, data, message) {
     'use strict';
     http.request('https://hooks.slack.com/services/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', 'post',
-                'payload={\'text\':' + JSON.stringify({Webhook: data, Timestamp: timestamp, Message: message}) + '}',
+                JSON.stringify({text: {Webhook: data, Timestamp: timestamp, Message: message}}),
                  'application/json');
 }
 
