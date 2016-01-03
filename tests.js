@@ -2,6 +2,7 @@
 /*global server */
 /*global http */
 /*global log */
+/*global script */
 
 // http://stackoverflow.com/a/21273362/1449056
 function undefinedOrNull(variable) {	'use strict'; return variable === undefined || variable === null; } //return variable == null;
@@ -129,6 +130,9 @@ function checkWebhookArgs(args, timestamp) {
 		if (undefinedOrNull(args.UserId)) {
 			throw new PhotonException(1, msg + 'UserId', timestamp, args);
 		}
+        if (args.UserId !== handlers.currentPlayerId) {
+            throw new PhotonException(3, 'currentPlayerId does not match UserId');
+        }
 		if (undefinedOrNull(args.Username) && undefinedOrNull(args.Nickname)) {
 			throw new PhotonException(1, msg + 'Username/Nickname', timestamp, args);
 		}
@@ -230,7 +234,8 @@ handlers.RoomCreated = function (args) {
         checkWebhookArgs(args, timestamp);
         if (args.Type === 'Create') {
             createSharedGroup(args.GameId);
-            data.Env = {Region: args.Region, Version: args.Version, AppId: args.AppId}; // TBD: add PlayFab specific env. titleId, cloudScript v/r
+            data.Env = {Region: args.Region, Version: args.Version, AppId: args.AppId, TitleId: script.titleId,
+                        CloudScriptVersion: script.revisionString, PlayFabServerVersion: server.version};
             data.RoomOptions = args.CreateOptions;
             data.Creation = {Timestamp: timestamp, UserId: args.UserId};
             data.Actors = {1: {UserId: args.UserId, Inactive: false}};
@@ -264,6 +269,7 @@ handlers.RoomClosed = function (args) {
             data = {};
         checkWebhookArgs(args, timestamp);
         data = getSharedGroupEntry(args.GameId, 'CustomState');
+        // TODO: compare data.Env with current env
         if (args.Type === 'Close') {
             if (Object.keys(data.Actors).length !== 0) {
                 throw new PhotonException(2, 'Game cant be deleted with players still joined', timestamp, {Webhook: args, CustomState: data});
@@ -292,6 +298,7 @@ handlers.RoomJoined = function (args) {
         checkWebhookArgs(args, timestamp);
         joinEntryKey = args.ActorNr + '_' + args.UserId;
         data = getSharedGroupEntry(args.GameId, 'CustomState');
+        // TODO: compare data.Env with current env
         if (data.RoomOptions.PlayerTTL !== 0 && data.NextActorNr > args.ActorNr) { // ActorNr is already claimed, should be a rejoin
             if (data.ActiveActors[args.ActorNr].Inactive === false) {
                 throw new PhotonException(2, 'Actor is already joined', timestamp, {Webhook: args, CustomState: data});
@@ -333,6 +340,7 @@ handlers.RoomLeft = function (args) {
         checkWebhookArgs(args, timestamp);
         joinEntryKey = args.ActorNr + '_' + args.UserId;
         data = getSharedGroupEntry(args.GameId, 'CustomState');
+        // TODO: compare data.Env with current env
         if (!data.Actors.hasOwnProperty(args.ActorNr)) {
             throw new PhotonException(2, 'No ActorNr inside the room', timestamp, {Webhook: args, CustomState: data});
         }
