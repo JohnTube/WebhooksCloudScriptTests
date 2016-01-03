@@ -83,8 +83,8 @@ function getISOTimestamp() {
 
 function logException(timestamp, data, message) {
     'use strict';
-    http.request('https://hooks.slack.com/services/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', 'post',
-                JSON.stringify({text: {Webhook: data, Timestamp: timestamp, Message: message}}),
+    http.request('https://hooks.slack.com/services/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', 'post',
+                JSON.stringify({text: '```' + JSON.stringify({Webhook: data, Timestamp: timestamp, Message: message}) + '```'}),
                  'application/json');
 }
 
@@ -266,7 +266,7 @@ handlers.RoomClosed = function (args) {
         data = getSharedGroupEntry(args.GameId, 'CustomState');
         if (args.Type === 'Close') {
             if (Object.keys(data.Actors).length !== 0) {
-                throw new PhotonException(2, 'Game cant be deleted with players still joined', timestamp, args);
+                throw new PhotonException(2, 'Game cant be deleted with players still joined', timestamp, {Webhook: args, CustomState: data});
             }
         } /*else if (args.Type === 'Save') {
             
@@ -294,21 +294,21 @@ handlers.RoomJoined = function (args) {
         data = getSharedGroupEntry(args.GameId, 'CustomState');
         if (data.RoomOptions.PlayerTTL !== 0 && data.NextActorNr > args.ActorNr) { // ActorNr is already claimed, should be a rejoin
             if (data.ActiveActors[args.ActorNr].Inactive === false) {
-                throw new PhotonException(2, 'Actor is already joined', timestamp, args);
+                throw new PhotonException(2, 'Actor is already joined', timestamp, {Webhook: args, CustomState: data});
             } else if (data.RoomOptions.CheckUserOnJoin === true && args.UserId !== data.Actors[args.ActorNr].UserId) {
-                throw new PhotonException(2, 'Illegal rejoin with different UserId', timestamp, args);
+                throw new PhotonException(2, 'Illegal rejoin with different UserId', timestamp, {Webhook: args, CustomState: data});
             } else if (args.UserId !== data.Actors[args.ActorNr].UserId) {
                 data.Actors[args.ActorNr].UserId = args.UserId;
             }
             data.Actors[args.ActorNr].Inactive = false;
         } else if (data.NextActorNr === args.ActorNr) { // first join
             if (Object.keys(data.Actors).length === args.RoomOptions.MaxPlayers) {
-                throw new PhotonException(2, 'Actors overflow', timestamp, args);
+                throw new PhotonException(2, 'Actors overflow', timestamp, {Webhook: args, CustomState: data});
             }
             data.Actors[args.ActorNr] = {UserId: args.UserId, Inactive: false};
             data.NextActorNr = data.NextActorNr + 1;
         } else {
-            throw new PhotonException(2, 'Unexpected ActorNr', timestamp, args);
+            throw new PhotonException(2, 'Unexpected ActorNr', timestamp, {Webhook: args, CustomState: data});
         }
         if (!data.JoinEvents.hasOwnProperty(joinEntryKey)) {
             data.JoinEvents[joinEntryKey] = [];
@@ -334,13 +334,13 @@ handlers.RoomLeft = function (args) {
         joinEntryKey = args.ActorNr + '_' + args.UserId;
         data = getSharedGroupEntry(args.GameId, 'CustomState');
         if (!data.Actors.hasOwnProperty(args.ActorNr)) {
-            throw new PhotonException(2, '', timestamp, args);
+            throw new PhotonException(2, 'No ActorNr inside the room', timestamp, {Webhook: args, CustomState: data});
         }
         if (args.Type !== LeaveReason.PlayerTtlTimedOut && data.Actors[args.ActorNr].Inactive === false) {
-            throw new PhotonException(2, 'Inactive actors cant leave', timestamp, args);
+            throw new PhotonException(2, 'Inactive actors cant leave', timestamp, {Webhook: args, CustomState: data});
         }
         if (data.Actors[args.ActorNr].UserId !== args.UserId) {
-            throw new PhotonException(2, 'Leaving UserId is different from joined', timestamp, args);
+            throw new PhotonException(2, 'Leaving UserId is different from joined', timestamp, {Webhook: args, CustomState: data});
         }
         if (args.Inactive) {
             data.Actors[args.ActorNr].Inactive = true;
