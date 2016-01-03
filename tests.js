@@ -101,18 +101,6 @@ function PhotonException(code, msg, timestamp, data) {
 PhotonException.prototype = Object.create(Error.prototype);
 PhotonException.prototype.constructor = PhotonException;
 
-/*  public const byte ClientDisconnect = 0;
-    public const byte ClientTimeoutDisconnect = 1;
-    public const byte ConnectTimeout = 5;
-    public const byte LeaveRequest = 101;
-    public const byte ManagedDisconnect = 2;
-    public const byte PeerLastTouchTimedout = 103;
-    public const byte PlayerTtlTimedOut = 102;
-    public const byte PluginFailedJoin = 105;
-    public const byte PluginRequest = 104;
-    public const byte ServerDisconnect = 3;
-    public const byte SwitchRoom = 100;
-    public const byte TimeoutDisconnect = 4;*/
 var LeaveReason = { ClientDisconnect: 0, ClientTimeoutDisconnect: 1, ManagedDisconnect: 2, ServerDisconnect: 3, TimeoutDisconnect: 4, ConnectTimeout: 5,
                     SwitchRoom: 100, LeaveRequest: 101, PlayerTtlTimedOut: 102, PeerLastTouchTimedout: 103, PluginRequest: 104, PluginFailedJoin: 105 };
 
