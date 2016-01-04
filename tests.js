@@ -3,6 +3,7 @@
 /*global http */
 /*global log */
 /*global script */
+/*global currentPlayerId */
 
 // http://stackoverflow.com/a/21273362/1449056
 function undefinedOrNull(variable) {	'use strict'; return variable === undefined || variable === null; } //return variable == null;
@@ -130,8 +131,8 @@ function checkWebhookArgs(args, timestamp) {
 		if (undefinedOrNull(args.UserId)) {
 			throw new PhotonException(1, msg + 'UserId', timestamp, args);
 		}
-        if (args.UserId !== handlers.currentPlayerId) {
-            throw new PhotonException(3, 'currentPlayerId=' + handlers.currentPlayerId + ' does not match UserId', timestamp, args);
+        if (args.UserId !== currentPlayerId) {
+            throw new PhotonException(3, 'currentPlayerId=' + currentPlayerId + ' does not match UserId', timestamp, args);
         }
 		if (undefinedOrNull(args.Username) && undefinedOrNull(args.Nickname)) {
 			throw new PhotonException(1, msg + 'Username/Nickname', timestamp, args);
