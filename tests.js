@@ -131,7 +131,7 @@ function checkWebhookArgs(args, timestamp) {
 			throw new PhotonException(1, msg + 'UserId', timestamp, args);
 		}
         if (args.UserId !== handlers.currentPlayerId) {
-            throw new PhotonException(3, 'currentPlayerId does not match UserId');
+            throw new PhotonException(3, 'currentPlayerId does not match UserId', timestamp, args);
         }
 		if (undefinedOrNull(args.Username) && undefinedOrNull(args.Nickname)) {
 			throw new PhotonException(1, msg + 'Username/Nickname', timestamp, args);
