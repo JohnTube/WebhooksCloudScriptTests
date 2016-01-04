@@ -103,8 +103,8 @@ function PhotonException(code, msg, timestamp, data) {
 PhotonException.prototype = Object.create(Error.prototype);
 PhotonException.prototype.constructor = PhotonException;
 
-var LeaveReason = { ClientDisconnect: 0, ClientTimeoutDisconnect: 1, ManagedDisconnect: 2, ServerDisconnect: 3, TimeoutDisconnect: 4, ConnectTimeout: 5,
-                    SwitchRoom: 100, LeaveRequest: 101, PlayerTtlTimedOut: 102, PeerLastTouchTimedout: 103, PluginRequest: 104, PluginFailedJoin: 105 };
+var LeaveReason = { ClientDisconnect: '0', ClientTimeoutDisconnect: '1', ManagedDisconnect: '2', ServerDisconnect: '3', TimeoutDisconnect: '4', ConnectTimeout: '5',
+                    SwitchRoom: '100', LeaveRequest: '101', PlayerTtlTimedOut: '102', PeerLastTouchTimedout: '103', PluginRequest: '104', PluginFailedJoin: '105' };
 
 function checkWebhookArgs(args, timestamp) {
     'use strict';
@@ -141,8 +141,8 @@ function checkWebhookArgs(args, timestamp) {
 		if (undefinedOrNull(args.ActorCount)) {
             throw new PhotonException(1, msg + 'ActorCount', timestamp, args);
 		}
-        if (!undefinedOrNull(args.State2)) {
-            if (args.State2.length !== args.ActorCount) {
+        if (!undefinedOrNull(args.State2) && !undefinedOrNull(args.State2.ActorList)) {
+            if (args.State2.ActorList.length !== args.ActorCount) {
                 throw new PhotonException(2, 'ActorCount does not match ActorList.count', timestamp, args);
             }
         }
