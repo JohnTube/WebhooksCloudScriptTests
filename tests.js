@@ -216,7 +216,7 @@ function checkWebhookArgs(args, timestamp) {
             if (LeaveReason[args.Type] !== args.Reason) { // For some reason Type string does not match Reason code
                 throw new PhotonException(2, 'Reason code does not match Leave Type string', timestamp, args);
             }
-            if ([1, 100, 103, 105].indexOf(args.Reason) > -1) { // Unexpected leave reasons
+            if (['1', '100', '103', '105'].indexOf(args.Reason) > -1) { // Unexpected leave reasons
                 throw new PhotonException(2, 'Unexpected LeaveReason', timestamp, args);
             }
         } else {
@@ -345,7 +345,7 @@ handlers.RoomLeft = function (args) {
         if (!data.Actors.hasOwnProperty(args.ActorNr)) {
             throw new PhotonException(2, 'No ActorNr inside the room', timestamp, {Webhook: args, CustomState: data});
         }
-        if (args.Type !== LeaveReason.PlayerTtlTimedOut && data.Actors[args.ActorNr].Inactive === false) {
+        if (args.Type !== LeaveReason.PlayerTtlTimedOut && data.Actors[args.ActorNr].Inactive === true) {
             throw new PhotonException(2, 'Inactive actors cant leave', timestamp, {Webhook: args, CustomState: data});
         }
         if (data.Actors[args.ActorNr].UserId !== args.UserId) {
