@@ -235,8 +235,8 @@ handlers.RoomCreated = function (args) {
         checkWebhookArgs(args, timestamp);
         if (args.Type === 'Create') {
             createSharedGroup(args.GameId);
-            data.Env = {Region: args.Region, Version: args.AppVersion, AppId: args.AppId, TitleId: script.titleId,
-                        CloudScriptVersion: script.revisionString, PlayFabServerVersion: server.version};
+            data.Env = {Region: args.Region, AppVersion: args.AppVersion, AppId: args.AppId, TitleId: script.titleId,
+                        CloudScriptVersion: script.version, CloudScriptRevision: script.revision, PlayFabServerVersion: server.version};
             data.RoomOptions = args.CreateOptions;
             data.Creation = {Timestamp: timestamp, UserId: args.UserId};
             data.Actors = {1: {UserId: args.UserId, Inactive: false}};
