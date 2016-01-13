@@ -389,7 +389,8 @@ handlers.RoomJoined = function (args) {
     'use strict';
     try {
         var timestamp = getISOTimestamp(),
-            data = {};
+            data = {},
+            actorNr;
         checkWebhookArgs(args, timestamp);
         data = getSharedGroupData(args.GameId);
         if (args.Type !== 'Join') {
@@ -408,6 +409,11 @@ handlers.RoomJoined = function (args) {
         } else if (data.NextActorNr === args.ActorNr) { // first join
             if (Object.keys(data.Actors).length === args.RoomOptions.MaxPlayers) {
                 throw new PhotonException(2, 'Actors overflow', timestamp, {Webhook: args, CustomState: data});
+            }
+            for (actorNr in data.Actors) {
+                if (data.Actors.hasOwnProperty(actorNr) && data.Actors[actorNr].UserId === currentPlayerId) {
+                    throw new PhotonException(2, 'UserId is already used', timestamp, {Webhook: args, CustomState: data});
+                }
             }
             data.Actors[args.ActorNr] = {UserId: args.UserId, Inactive: false};
             data.NextActorNr = data.NextActorNr + 1;
