@@ -5,12 +5,81 @@
 /*global script */
 /*global currentPlayerId */
 
-var GAMES_LIST_SUFFIX = '_GamesList';
+/**************************************************************************************************************************************/
 
-function getGamesListId(playerId) {
+// GameData may contain the following properties:
+//- Environment (Photon Cloud Region, Photon Client AppVersion, Photon AppId, WebhooksVersion, PlayFab TitleId, CloudScriptVersion and Revision, PlayFabServerVersion) 
+//- RoomOptions 
+//- Actors (ActorNr: {UserId, Inactive}) 
+//- Creation (Timestamp, UserId=creator, Type=Load/Create)
+//- JoinEvents (Timestamp, UserId)
+//- LeaveEvents (Timestamp, UserId, Inactive, <Reason:Type>)
+//- LoadEvents (Timestamp, UserId)
+//- SaveEvents (Timestamp, UserId)
+//- State (Photon Room State)
+
+
+// args = PathCreate, Type='Create' webhook args. you need args.GameId.
+// data = Room data, modify it but do not delete or overwrite existing properties. this will be saved for you.
+function onGameCreated(args, data) {
     'use strict';
-    return String(playerId) + GAMES_LIST_SUFFIX;
 }
+
+// args = PathCreate, Type='Load' webhook args. you need args.GameId.
+// data = Room data, modify it but do not delete or overwrite existing properties. this will be saved for you.
+function onGameLoaded(args, data) {
+    'use strict';
+}
+
+// args = PathClose, Type='Close' webhook args. you need args.GameId.
+// data = Room data. this will be destroyed and lost.
+function beforeGameDeletion(args, data) {
+    'use strict';
+}
+
+// args = PathClose, Type='Save' webhook args. you need args.GameId. args.State is already added to data.
+// data = Room data, modify it but do not delete or overwrite existing properties. this will be saved for you.
+function beforeSavingGame(args, data) {
+    'use strict';
+}
+
+// gameId = GameId of the game
+// gameEntry = game entry in the list, content vary
+function beforeAddingGameToPlayerList(gameId, gameEntry) {
+    'use strict';
+}
+
+// args = PathJoin webhook args. you need args.ActorNr. 
+// data = Room data, modify it but do not delete or overwrite existing properties. this will be saved for you.
+function onPlayerJoined(args, data) {
+    'use strict';
+}
+
+// args = PathLeft webhook args. you need args.ActorNr. 
+// data = Room data, modify it but do not delete or overwrite existing properties. this will be saved for you.
+function onPlayerLeft(args, data) {
+    'use strict';
+}
+
+// args = PathEvent webhook args, you need args.EvCode and args.Data (event data).
+// data = Room data, modify it but do not delete or overwrite existing properties. this will be saved for you.
+function onEventReceived(args, data) {
+    'use strict';
+}
+
+// args = PathGameProperties webhook args, you need args.TargetActor and args.Properties.
+// data = Room data, modify it but do not delete or overwrite existing properties. this will be saved for you.
+function onPlayerPropertyChanged(args, data) {
+    'use strict';
+}
+
+// args = PathGameProperties webhook args, you need args.Properties.
+// data = Room data, modify it but do not delete or overwrite existing properties. this will be saved for you.
+function onRoomPropertyChanged(args, data) {
+    'use strict';
+}
+
+/**************************************************************************************************************************************/
 
 // http://stackoverflow.com/a/21273362/1449056
 function undefinedOrNull(variable) {	'use strict'; return variable === undefined || variable === null; } //return variable == null;
@@ -26,9 +95,7 @@ function isEmpty(obj) {
 
 function createSharedGroup(id) {
     'use strict';
-	try {
-		server.CreateSharedGroup({SharedGroupId : id});
-	} catch (e) { throw e; }
+    return server.CreateSharedGroup({SharedGroupId : id});
 }
 
 function isString(obj) {
@@ -39,78 +106,75 @@ function isString(obj) {
 function updateSharedGroupData(id, data) {
     'use strict';
     var key;
-	try {
-        for (key in data) {
-			if (data.hasOwnProperty(key) && !undefinedOrNull(data[key]) && !isString(data[key])) {
-                data[key] = JSON.stringify(data[key]);
-            }
+    for (key in data) {
+        if (data.hasOwnProperty(key) && !undefinedOrNull(data[key]) && !isString(data[key])) {
+            data[key] = JSON.stringify(data[key]);
         }
-		server.UpdateSharedGroupData({ SharedGroupId: id, Data: data });
-	} catch (e) { throw e; }
+    }
+    return server.UpdateSharedGroupData({ SharedGroupId: id, Data: data });
 }
 
 function getSharedGroupData(id, keys) {
     'use strict';
-	try {
-        var data = {}, key;
-		if (undefinedOrNull(keys)) {
-			data = server.GetSharedGroupData({ SharedGroupId: id }).Data;
-		} else {
-			data = server.GetSharedGroupData({ SharedGroupId: id, Keys: keys }).Data;
-		}
-        for (key in data) {
-			if (data.hasOwnProperty(key)) {
-                data[key] = JSON.parse(data[key].Value); // 'LastUpdated' and 'Permission' properties are overwritten
-            }
-        }
+    var data = {}, key;
+    if (undefinedOrNull(keys)) {
+        data = server.GetSharedGroupData({ SharedGroupId: id });
+    } else {
+        data = server.GetSharedGroupData({ SharedGroupId: id, Keys: keys });
+    }
+    if (data.code !== 200) {
         return data;
-	} catch (e) { throw e; }
+    }
+    data = data.Data;
+    for (key in data) {
+        if (data.hasOwnProperty(key)) {
+            data[key] = JSON.parse(data[key].Value); // 'LastUpdated' and 'Permission' properties are overwritten
+        }
+    }
+    return data;
 }
 
 function deleteSharedGroup(id) {
     'use strict';
-    try {
-        server.DeleteSharedGroup({SharedGroupId : id});
-    } catch (e) { throw e; }
+    return server.DeleteSharedGroup({SharedGroupId : id});
 }
 
 function getSharedGroupEntry(id, key) {
     'use strict';
-    try {
-        return getSharedGroupData(id, [key]);
-    } catch (e) { throw e; }
+    return getSharedGroupData(id, [key]);
 }
 
 function updateSharedGroupEntry(id, key, value) {
     'use strict';
-    try {
-        var data = {};
-        data[key] = value;
-        updateSharedGroupData(id, data);
-    } catch (e) { throw e; }
+    var data = {};
+    data[key] = value;
+    return updateSharedGroupData(id, data);
 }
 
 function deleteSharedGroupEntry(id, key) {
     'use strict';
-    try {
-        updateSharedGroupEntry(id, key, null);
-    } catch (e) { throw e; }
+    return updateSharedGroupEntry(id, key, null);
 }
 
 function getISOTimestamp() {
     'use strict';
-    try {
-        return (new Date()).toISOString();
-    } catch (e) { throw e; }
+    return (new Date()).toISOString() + Math.random();
 }
 
 function logException(timestamp, data, message) {
     'use strict';
     //TEMPORARY solution until log functions' output is available from GameManager
-    server.SetTitleData({
-        Key: timestamp + Math.random(),
+    return server.SetTitleData({
+        Key: timestamp,
         Value: JSON.stringify({Message: message, Data: data})
     });
+}
+
+var GAMES_LIST_SUFFIX = '_GamesList';
+
+function getGamesListId(playerId) {
+    'use strict';
+    return String(playerId) + GAMES_LIST_SUFFIX;
 }
 
 function PhotonException(code, msg, timestamp, data) {
@@ -249,19 +313,54 @@ function checkWebhookArgs(args, timestamp) {
 	}
 }
 
-function onGameCreated(args, timestamp) {
+
+function loadGameData(gameId) {
     'use strict';
-    var data = {};
-    createSharedGroup(args.GameId);
-    data.Env = {Region: args.Region, AppVersion: args.AppVersion, AppId: args.AppId, TitleId: script.titleId,
-                CloudScriptVersion: script.version, CloudScriptRevision: script.revision, PlayFabServerVersion: server.version,
-               WebhooksVersion: undefinedOrNull(args.Nickname) ? '1.0' : '1.2'};
-    data.RoomOptions = args.CreateOptions;
-    data.Creation = {Timestamp: timestamp, UserId: args.UserId, Type: args.Type};
-    data.Actors = {1: {UserId: args.UserId, Inactive: false}};
-    data.NextActorNr = 2;
-    updateSharedGroupData(args.GameId, data);
-    updateSharedGroupEntry(getGamesListId(currentPlayerId), args.GameId, data);
+    var data = getSharedGroupEntry(getGamesListId(currentPlayerId), gameId);
+    if (data.Creation.UserId !== currentPlayerId) {
+        data = getSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId);
+    }
+    return data;
+}
+
+function saveGameData(gameId, data) {
+    'use strict';
+    deleteSharedGroup(gameId);
+    updateSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId, data);
+}
+
+function deleteGameData(gameId, data) {
+    'use strict';
+    deleteSharedGroup(gameId);
+    deleteSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId);
+}
+    
+function addGameToList(gameId, data) {
+    'use strict';
+    beforeAddingGameToPlayerList(gameId, data);
+    updateSharedGroupEntry(getGamesListId(currentPlayerId), gameId, data);
+}
+
+function createGame(args, timestamp) {
+    'use strict';
+    var data = createSharedGroup(args.GameId);
+    if (data.code === 200) {
+        data = {};
+        data.Env = {Region: args.Region, AppVersion: args.AppVersion, AppId: args.AppId, TitleId: script.titleId,
+                    CloudScriptVersion: script.version, CloudScriptRevision: script.revision, PlayFabServerVersion: server.version,
+                   WebhooksVersion: undefinedOrNull(args.Nickname) ? '1.0' : '1.2'};
+        data.RoomOptions = args.CreateOptions;
+        data.Creation = {Timestamp: timestamp, UserId: args.UserId, Type: args.Type};
+        data.Actors = {1: {UserId: args.UserId, Inactive: false}};
+        data.NextActorNr = 2;
+        onGameCreated(args, data);
+        updateSharedGroupData(args.GameId, data);
+        addGameToList(args.GameId, data);
+    } else if (data.errorCode === 1088) {
+        throw new PhotonException(7, 'Game already exist', timestamp, {Webhook: args});
+    } else {
+        throw new PhotonException(7, 'Error creating new game: ' + data.errorMessage, timestamp, {Webhook: args});
+    }
 }
 
 
@@ -273,18 +372,15 @@ handlers.RoomCreated = function (args) {
             actorNr;
         checkWebhookArgs(args, timestamp);
         if (args.Type === 'Create') {
-            onGameCreated(args, timestamp);
+            createGame(args, timestamp);
             return {ResultCode: 0, Message: 'OK'};
         } else if (args.Type === 'Load') {
-            data = getSharedGroupEntry(getGamesListId(currentPlayerId), args.GameId);
-            if (data.Creation.UserId !== currentPlayerId) {
-                data = getSharedGroupEntry(getGamesListId(data.Creation.UserId), args.GameId);
-            }
+            data = loadGameData(args.GameId);
             if (undefinedOrNull(data.State)) {
                 if (args.CreateIfNotExists === false) {
                     throw new PhotonException(5, 'Room=' + args.GameId + ' not found', timestamp, {Webhook: args, CustomState: data});
                 } else {
-                    onGameCreated(args, timestamp);
+                    createGame(args, timestamp);
                     return {ResultCode: 0, Message: 'OK', State: ''}; // TBD: test if State property is required or what can be returned
                 }
             }
@@ -330,6 +426,7 @@ handlers.RoomCreated = function (args) {
             }
             data.LoadEvents[timestamp] = {ActorNr: args.ActorNr, UserId: args.UserId};
             createSharedGroup(args.GameId);
+            onGameLoaded(args, data);
             updateSharedGroupData(args.GameId, data);
             return {ResultCode: 0, Message: 'OK', State: data.State};
         } else {
@@ -364,18 +461,19 @@ handlers.RoomClosed = function (args) {
         }
         // TODO: compare data.Env with current env
         if (args.Type === 'Close') {
-            deleteSharedGroupEntry(getGamesListId(data.Creation.UserId), args.GameId);
+            beforeGameDeletion(args, data);
+            deleteGameData(data);
         } else if (args.Type === 'Save') {
             if (undefinedOrNull(data.SaveEvents)) {
                 data.SaveEvents = {};
             }
             data.SaveEvents[timestamp] = {ActorCount: args.ActorCount};
             data.State = args.State;
-            updateSharedGroupEntry(getGamesListId(data.Creation.UserId), args.GameId, data);
+            beforeSavingGame(args, data);
+            saveGameData(data);
         } else {
             throw new PhotonException(2, 'Wrong PathClose Type=' + args.Type, timestamp, {Webhook: args, CustomState: data});
         }
-        deleteSharedGroup(args.GameId);
         return {ResultCode: 0, Message: 'OK'};
     } catch (e) {
         if (e instanceof PhotonException) {
@@ -415,6 +513,7 @@ handlers.RoomJoined = function (args) {
                     throw new PhotonException(2, 'UserId is already used', timestamp, {Webhook: args, CustomState: data});
                 }
             }
+            addGameToList(args.GameId, {Env: data.Env, Creation: data.Creation});
             data.Actors[args.ActorNr] = {UserId: args.UserId, Inactive: false};
             data.NextActorNr = data.NextActorNr + 1;
         } else {
@@ -424,8 +523,8 @@ handlers.RoomJoined = function (args) {
             data.JoinEvents = {};
         }
         data.JoinEvents[timestamp] = {ActorNr: args.ActorNr, UserId: args.UserId};
+        onPlayerJoined(args, data);
         updateSharedGroupData(args.GameId, data);
-        updateSharedGroupEntry(getGamesListId(currentPlayerId), args.GameId, {Env: data.Env, Creation: data.Creation});
         return {ResultCode: 0, Message: 'OK'};
     } catch (e) {
         if (e instanceof PhotonException) {
@@ -457,7 +556,7 @@ handlers.RoomLeft = function (args) {
         }
         if (args.IsInactive === true) {
             data.Actors[args.ActorNr].Inactive = true;
-        } else {
+        } else if (args.ActorNr !== 1) { // temporary fix
             delete data.Actors[args.ActorNr];
             deleteSharedGroupEntry(getGamesListId(currentPlayerId), args.GameId);
         }
@@ -465,6 +564,7 @@ handlers.RoomLeft = function (args) {
             data.LeaveEvents = {};
         }
         data.LeaveEvents[timestamp] = {ActorNr: args.ActorNr, UserId: args.UserId, CanRejoin: args.IsInactive, Reason: args.Reason + ':' + args.Type};
+        onPlayerLeft(args, data);
         updateSharedGroupData(args.GameId, data);
         return {ResultCode: 0, Message: 'OK'};
     } catch (e) {
@@ -482,7 +582,11 @@ handlers.RoomPropertyUpdated = function (args) {
             data = {};
         checkWebhookArgs(args, timestamp);
         data = getSharedGroupData(args.GameId);
-        if (args.Type !== 'Player' || args.Type !== 'Game') {
+        if (args.Type === 'Player') {
+            onPlayerPropertyChanged(args, data);
+        } else if (args.Type === 'Game') {
+            onRoomPropertyChanged(args, data);
+        } else {
             throw new PhotonException(2, 'Wrong PathGameProperties Type=' + args.Type, timestamp, {Webhook: args, CustomState: data});
         }
         if (!undefinedOrNull(args.State)) {
@@ -510,6 +614,7 @@ handlers.RoomEventRaised = function (args) {
         if (args.Type !== 'Event') {
             throw new PhotonException(2, 'Wrong PathEvent Type=' + args.Type, timestamp, {Webhook: args, CustomState: data});
         }
+        onEventReceived(args, data);
         if (!undefinedOrNull(args.State)) {
             data.State = args.State;
             updateSharedGroupData(args.GameId, data);
@@ -517,6 +622,7 @@ handlers.RoomEventRaised = function (args) {
         } else if (data.Env.WebhooksVersion !== '1.2') {
             throw new PhotonException(1, 'Missing argument State', timestamp, {Webhook: args, CustomState: data});
         }
+        return {ResultCode: 0, Message: 'OK'};
     } catch (e) {
         if (e instanceof PhotonException) {
             return {ResultCode: e.ResultCode, Message: e.Message};
