@@ -269,7 +269,8 @@ handlers.RoomCreated = function (args) {
     'use strict';
     try {
         var timestamp = getISOTimestamp(),
-            data = {};
+            data = {},
+            actorNr;
         checkWebhookArgs(args, timestamp);
         if (args.Type === 'Create') {
             onGameCreated(args, timestamp);
@@ -281,12 +282,49 @@ handlers.RoomCreated = function (args) {
             }
             if (undefinedOrNull(data.State)) {
                 if (args.CreateIfNotExists === false) {
-                    throw new PhotonException(5, 'Room=' + args.GameId + ' not found', timestamp, args);
+                    throw new PhotonException(5, 'Room=' + args.GameId + ' not found', timestamp, {Webhook: args, CustomState: data});
                 } else {
                     onGameCreated(args, timestamp);
                     return {ResultCode: 0, Message: 'OK', State: ''}; // TBD: test if State property is required or what can be returned
                 }
             }
+            if (args.ActorNr === 0) {
+                if (data.Env.WebhooksVersion !== '1.2') {
+                    throw new PhotonException(3, 'AsyncRejoin behaviour in 1.0', timestamp, {Webhook: args, CustomState: data});
+                } else {
+                    args.ActorNr = data.NextActorNr;
+                    data.NextActorNr = data.NextActorNr + 1;
+                    data.Actors[args.ActorNr] = {UserId: args.UserId, Inactive: false};
+                }
+            } else if (data.RoomOptions.PlayerTTL !== 0 && data.NextActorNr > args.ActorNr) {
+                if (args.ActorNr > 0) {
+                    if (data.ActiveActors[args.ActorNr].Inactive === false) {
+                        throw new PhotonException(2, 'Actor is already joined', timestamp, {Webhook: args, CustomState: data});
+                    } else if (data.RoomOptions.CheckUserOnJoin === true && args.UserId !== data.Actors[args.ActorNr].UserId) {
+                        throw new PhotonException(2, 'Illegal rejoin with different UserId', timestamp, {Webhook: args, CustomState: data});
+                    } else if (args.UserId !== data.Actors[args.ActorNr].UserId) {
+                        data.Actors[args.ActorNr].UserId = args.UserId;
+                    }
+                } else if (data.RoomOptions.CheckUserOnJoin === true) {
+                    for (actorNr in data.Actors) {
+                        if (data.Actors.hasOwnProperty(actorNr) && data.Actors[actorNr].UserId === currentPlayerId) {
+                            if (data.ActiveActors[actorNr].Inactive === false) {
+                                throw new PhotonException(2, 'Actor is already joined?!', timestamp, {Webhook: args, CustomState: data});
+                            }
+                            args.ActorNr = actorNr;
+                            break;
+                        }
+                    }
+                    if (args.ActorNr < 0) {
+                        throw new PhotonException(3, 'Unexpected ActorNr in weird Load event', timestamp, {Webhook: args, CustomState: data});
+                    }
+                } else {
+                    throw new PhotonException(3, 'Unexpected ActorNr in weird Load event', timestamp, {Webhook: args, CustomState: data});
+                }
+            } else {
+                throw new PhotonException(3, 'Unexpected ActorNr in weird Load event', timestamp, {Webhook: args, CustomState: data});
+            }
+            data.Actors[args.ActorNr].Inactive = false;
             if (undefinedOrNull(data.LoadEvents)) {
                 data.LoadEvents = {};
             }
@@ -411,7 +449,7 @@ handlers.RoomLeft = function (args) {
         if (data.Actors[args.ActorNr].UserId !== args.UserId) {
             throw new PhotonException(2, 'Leaving UserId is different from joined', timestamp, {Webhook: args, CustomState: data});
         }
-        if (args.Inactive) {
+        if (args.Inactive === true) {
             data.Actors[args.ActorNr].Inactive = true;
         } else {
             delete data.Actors[args.ActorNr];
@@ -420,7 +458,7 @@ handlers.RoomLeft = function (args) {
         if (undefinedOrNull(data.LeaveEvents)) {
             data.LeaveEvents = {};
         }
-        data.LeaveEvents[timestamp] = {ActorNr: args.ActorNr, UserId: args.UserId, CanRejoin: args.Inactive};
+        data.LeaveEvents[timestamp] = {ActorNr: args.ActorNr, UserId: args.UserId, CanRejoin: args.Inactive, Reason: args.Reason + ':' + args.Type};
         updateSharedGroupData(args.GameId, data);
         return {ResultCode: 0, Message: 'OK'};
     } catch (e) {
