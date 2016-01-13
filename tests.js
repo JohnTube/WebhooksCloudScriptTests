@@ -449,7 +449,7 @@ handlers.RoomLeft = function (args) {
         if (data.Actors[args.ActorNr].UserId !== args.UserId) {
             throw new PhotonException(2, 'Leaving UserId is different from joined', timestamp, {Webhook: args, CustomState: data});
         }
-        if (args.Inactive === true) {
+        if (args.IsInactive === true) {
             data.Actors[args.ActorNr].Inactive = true;
         } else {
             delete data.Actors[args.ActorNr];
@@ -458,7 +458,7 @@ handlers.RoomLeft = function (args) {
         if (undefinedOrNull(data.LeaveEvents)) {
             data.LeaveEvents = {};
         }
-        data.LeaveEvents[timestamp] = {ActorNr: args.ActorNr, UserId: args.UserId, CanRejoin: args.Inactive, Reason: args.Reason + ':' + args.Type};
+        data.LeaveEvents[timestamp] = {ActorNr: args.ActorNr, UserId: args.UserId, CanRejoin: args.IsInactive, Reason: args.Reason + ':' + args.Type};
         updateSharedGroupData(args.GameId, data);
         return {ResultCode: 0, Message: 'OK'};
     } catch (e) {
