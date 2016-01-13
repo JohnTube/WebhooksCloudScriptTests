@@ -315,6 +315,15 @@ handlers.RoomClosed = function (args) {
         if (Object.keys(data.Actors).length !== args.ActorCount) {
             throw new PhotonException(6, 'Actors count does not match', timestamp, {Webhook: args, CustomState: data});
         }
+        if (!undefinedOrNull(args.State2)) {
+            if (undefinedOrNull(args.State2.ActorList)) {
+                throw new PhotonException(6, 'State2 does not contain ActorList', timestamp, {Webhook: args, CustomState: data});
+            } else if (args.ActorCount !== args.State2.ActorList.length) {
+                throw new PhotonException(6, 'Actors count does not match', timestamp, {Webhook: args, CustomState: data});
+            }
+        } else if (data.Env.WebhooksVersion !== '1.2') {
+            throw new PhotonException(1, 'Missing argument State2', timestamp, {Webhook: args, CustomState: data});
+        }
         // TODO: compare data.Env with current env
         if (args.Type === 'Close') {
             deleteSharedGroupEntry(getGamesListId(data.Creation.UserId), args.GameId);
@@ -436,6 +445,8 @@ handlers.RoomPropertyUpdated = function (args) {
             data.State = args.State;
             updateSharedGroupData(args.GameId, data);
             updateSharedGroupEntry(getGamesListId(data.Creation.UserId), args.GameId, data);
+        } else if (data.Env.WebhooksVersion !== '1.2') {
+            throw new PhotonException(1, 'Missing argument State', timestamp, {Webhook: args, CustomState: data});
         }
     } catch (e) {
         if (e instanceof PhotonException) {
@@ -459,6 +470,8 @@ handlers.RoomEventRaised = function (args) {
             data.State = args.State;
             updateSharedGroupData(args.GameId, data);
             updateSharedGroupEntry(getGamesListId(data.Creation.UserId), args.GameId, data);
+        } else if (data.Env.WebhooksVersion !== '1.2') {
+            throw new PhotonException(1, 'Missing argument State', timestamp, {Webhook: args, CustomState: data});
         }
     } catch (e) {
         if (e instanceof PhotonException) {
@@ -485,12 +498,28 @@ function checkWebRpcArgs(args, timestamp) {
     }
 }
 
+handlers.onLogin = function (args) {
+    'use strict';
+    try {
+        var timestamp = getISOTimestamp(),
+            data = {};
+        checkWebRpcArgs(args, timestamp);
+    } catch (e) {
+        return {ResultCode: 0, Data: {}};
+    }
+};
+
 handlers.GetRoomData = function (args) {
     'use strict';
     try {
-        var timestamp = getISOTimestamp();
+        var timestamp = getISOTimestamp(),
+            data = {};
         checkWebRpcArgs(args, timestamp);
-        return {ResultCode: 0, Message: 'OK', Data: getSharedGroupEntry(args.GameId, 'CustomState')};
+        if (undefinedOrNull(args.GameId)) {
+            throw new PhotonException(2, 'Missing argument: GameId', timestamp, args);
+        }
+        data = getSharedGroupData(args.GameId);
+        return {ResultCode: 0, Message: 'OK', Data: data};
     } catch (e) {
         if (e instanceof PhotonException) {
             return {ResultCode: e.ResultCode, Message: e.Message};
