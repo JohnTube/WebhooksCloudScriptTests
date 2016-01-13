@@ -4,82 +4,16 @@
 /*global log */
 /*global script */
 /*global currentPlayerId */
-
-/**************************************************************************************************************************************/
-
-// GameData may contain the following properties:
-//- Environment (Photon Cloud Region, Photon Client AppVersion, Photon AppId, WebhooksVersion, PlayFab TitleId, CloudScriptVersion and Revision, PlayFabServerVersion) 
-//- RoomOptions 
-//- Actors (ActorNr: {UserId, Inactive}) 
-//- Creation (Timestamp, UserId=creator, Type=Load/Create)
-//- JoinEvents (Timestamp, UserId)
-//- LeaveEvents (Timestamp, UserId, Inactive, <Reason:Type>)
-//- LoadEvents (Timestamp, UserId)
-//- SaveEvents (Timestamp, UserId)
-//- State (Photon Room State)
-
-
-// args = PathCreate, Type='Create' webhook args. you need args.GameId.
-// data = Room data, modify it but do not delete or overwrite existing properties. this will be saved for you.
-function onGameCreated(args, data) {
-    'use strict';
-}
-
-// args = PathCreate, Type='Load' webhook args. you need args.GameId.
-// data = Room data, modify it but do not delete or overwrite existing properties. this will be saved for you.
-function onGameLoaded(args, data) {
-    'use strict';
-}
-
-// args = PathClose, Type='Close' webhook args. you need args.GameId.
-// data = Room data. this will be destroyed and lost.
-function beforeGameDeletion(args, data) {
-    'use strict';
-}
-
-// args = PathClose, Type='Save' webhook args. you need args.GameId. args.State is already added to data.
-// data = Room data, modify it but do not delete or overwrite existing properties. this will be saved for you.
-function beforeSavingGame(args, data) {
-    'use strict';
-}
-
-// gameId = GameId of the game
-// gameEntry = game entry in the list, content vary
-function beforeAddingGameToPlayerList(gameId, gameEntry) {
-    'use strict';
-}
-
-// args = PathJoin webhook args. you need args.ActorNr. 
-// data = Room data, modify it but do not delete or overwrite existing properties. this will be saved for you.
-function onPlayerJoined(args, data) {
-    'use strict';
-}
-
-// args = PathLeft webhook args. you need args.ActorNr. 
-// data = Room data, modify it but do not delete or overwrite existing properties. this will be saved for you.
-function onPlayerLeft(args, data) {
-    'use strict';
-}
-
-// args = PathEvent webhook args, you need args.EvCode and args.Data (event data).
-// data = Room data, modify it but do not delete or overwrite existing properties. this will be saved for you.
-function onEventReceived(args, data) {
-    'use strict';
-}
-
-// args = PathGameProperties webhook args, you need args.TargetActor and args.Properties.
-// data = Room data, modify it but do not delete or overwrite existing properties. this will be saved for you.
-function onPlayerPropertyChanged(args, data) {
-    'use strict';
-}
-
-// args = PathGameProperties webhook args, you need args.Properties.
-// data = Room data, modify it but do not delete or overwrite existing properties. this will be saved for you.
-function onRoomPropertyChanged(args, data) {
-    'use strict';
-}
-
-/**************************************************************************************************************************************/
+/*global beforeAddingGameToPlayerList*/
+/*global onGameCreated*/
+/*global onGameLoaded*/
+/*global beforeGameDeletion*/
+/*global beforeSavingGame*/
+/*global onPlayerJoined*/
+/*global onPlayerLeft*/
+/*global onPlayerPropertyChanged*/
+/*global onRoomPropertyChanged*/
+/*global onEventReceived*/
 
 // http://stackoverflow.com/a/21273362/1449056
 function undefinedOrNull(variable) {	'use strict'; return variable === undefined || variable === null; } //return variable == null;
@@ -317,6 +251,10 @@ function checkWebhookArgs(args, timestamp) {
 function loadGameData(gameId) {
     'use strict';
     var data = getSharedGroupEntry(getGamesListId(currentPlayerId), gameId);
+    if (!undefinedOrNull(data.code)) {
+        createSharedGroup(getGamesListId(currentPlayerId));
+        return data;
+    }
     if (data.Creation.UserId !== currentPlayerId) {
         data = getSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId);
     }
@@ -376,7 +314,7 @@ handlers.RoomCreated = function (args) {
             return {ResultCode: 0, Message: 'OK'};
         } else if (args.Type === 'Load') {
             data = loadGameData(args.GameId);
-            if (undefinedOrNull(data.State)) {
+            if (!undefinedOrNull(data.errorCode) || undefinedOrNull(data.State)) {
                 if (args.CreateIfNotExists === false) {
                     throw new PhotonException(5, 'Room=' + args.GameId + ' not found', timestamp, {Webhook: args, CustomState: data});
                 } else {
@@ -652,8 +590,13 @@ handlers.onLogin = function (args) {
     'use strict';
     try {
         var timestamp = getISOTimestamp(),
-            data = {};
-        checkWebRpcArgs(args, timestamp);
+            data = getSharedGroupData(getGamesListId(currentPlayerId));
+        if (!undefinedOrNull(data.code)) {
+            createSharedGroup(getGamesListId(currentPlayerId));
+            return {ResultCode: 0, Data: {}};
+        }
+        return {ResultCode: 0, Data: data};
+        //checkWebRpcArgs(args, timestamp);
     } catch (e) {
         return {ResultCode: 0, Data: {}};
     }
@@ -678,3 +621,45 @@ handlers.GetRoomData = function (args) {
     }
 };
 
+handlers.GetGameList = function (args) {
+    'use strict';
+    try {
+        var timestamp = getISOTimestamp(),
+            gameList = {},
+            listToLoad = {},
+            gameKey = '',
+            userKey = '',
+            data = {};
+        checkWebRpcArgs(args);
+        gameList = getSharedGroupData(getGamesListId(currentPlayerId));
+        for (gameKey in gameList) {
+            if (gameList.hasOwnProperty(gameKey)) {
+                if (gameList[gameKey].Creation.UserId === currentPlayerId) {
+                    data[gameKey] = {ActorNr: 1, Properties: gameList[gameKey].State.CustomProperties};
+                } else {
+                    data[gameKey] = {ActorNr: gameList[gameKey].ActorNr};
+                    if (undefinedOrNull(listToLoad[gameList[gameKey].Creation.UserId])) {
+                        listToLoad[gameList[gameKey].Creation.UserId] = [];
+                    }
+                    listToLoad[gameList[gameKey].Creation.UserId].push(data[gameKey]);
+                }
+            }
+        }
+        for (userKey in listToLoad) {
+            if (listToLoad.hasOwnProperty(userKey)) {
+                gameList = getSharedGroupData(getGamesListId(userKey), listToLoad[userKey]);
+                for (gameKey in gameList) {
+                    if (gameList.hasOwnProperty(gameKey)) {
+                        data[gameKey].Properties = gameList[gameKey].State.CustomProperties;
+                    }
+                }
+            }
+        }
+        return {ResultCode: 0, Data: data};
+    } catch (e) {
+        if (e instanceof PhotonException) {
+            return {ResultCode: e.ResultCode, Message: e.Message};
+        }
+        return {ResultCode: -1, Message: e.name + ': ' + e.message};
+    }
+};
