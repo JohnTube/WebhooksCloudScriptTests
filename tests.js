@@ -266,11 +266,11 @@ function loadGameData(gameId) {
         if (data.Creation.UserId !== currentPlayerId) {
             data = getSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId);
         }
-        /*for (key in data) {
+        for (key in data) {
             if (data.hasOwnProperty(key) && isString(data[key])) {
                 data[key] = JSON.parse(data[key]);
             }
-        }*/
+        }
         return data;
     } catch (e) { logException(getISOTimestamp(), null, e.stack); logException(getISOTimestamp(), null, e.stack); throw e; }
 }
@@ -336,6 +336,7 @@ handlers.RoomCreated = function (args) {
             return {ResultCode: 0, Message: 'OK'};
         } else if (args.Type === 'Load') {
             data = loadGameData(args.GameId);
+            logException(timestamp, data, '');
             if (!undefinedOrNull(data.errorCode) || undefinedOrNull(data.State)) {
                 if (args.CreateIfNotExists === false) {
                     throw new PhotonException(5, 'Room=' + args.GameId + ' not found', timestamp, {Webhook: args, CustomState: data});
