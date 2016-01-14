@@ -27,11 +27,6 @@ function isEmpty(obj) {
 	return (undefinedOrNull(obj) || Object.getOwnPropertyNames(obj).length === 0);
 }
 
-function createSharedGroup(id) {
-    'use strict';
-    return server.CreateSharedGroup({SharedGroupId : id});
-}
-
 function isString(obj) {
     'use strict';
     return (typeof obj === 'string' || obj instanceof String);
@@ -51,6 +46,11 @@ function logException(timestamp, data, message) {
             Value: JSON.stringify({Message: message, Data: data})
         });
     } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
+}
+
+function createSharedGroup(id) {
+    'use strict';
+    try { return server.CreateSharedGroup({SharedGroupId : id}); } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
 }
 
 function updateSharedGroupData(id, data) {
@@ -337,7 +337,7 @@ handlers.RoomCreated = function (args) {
         } else if (args.Type === 'Load') {
             data = loadGameData(args.GameId);
             //logException(timestamp, data, '');
-            /*if (!undefinedOrNull(data.errorCode) || undefinedOrNull(data.State)) {
+            if (!undefinedOrNull(data.errorCode) || undefinedOrNull(data.State)) {
                 if (args.CreateIfNotExists === false) {
                     throw new PhotonException(5, 'Room=' + args.GameId + ' not found', timestamp, {Webhook: args, CustomState: data});
                 } else {
@@ -380,7 +380,7 @@ handlers.RoomCreated = function (args) {
                 }
             } else {
                 throw new PhotonException(3, 'Unexpected ActorNr in weird Load event', timestamp, {Webhook: args, CustomState: data});
-            }*/
+            }
             data.Actors[args.ActorNr].Inactive = false;
             if (undefinedOrNull(data.LoadEvents)) {
                 data.LoadEvents = {};
@@ -389,7 +389,7 @@ handlers.RoomCreated = function (args) {
             createSharedGroup(args.GameId);
             onGameLoaded(args, data);
             updateSharedGroupData(args.GameId, data);
-            return {ResultCode: 0, Message: 'OK', State: JSON.parse(data.State)};
+            return {ResultCode: 0, Message: 'OK', State: data.State};
         } else {
             throw new PhotonException(2, 'Wrong PathCreate Type=' + args.Type, timestamp, {Webhook: args});
         }
