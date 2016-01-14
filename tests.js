@@ -261,7 +261,7 @@ function checkWebhookArgs(args, timestamp) {
 function loadGameData(gameId) {
     'use strict';
     try {
-        var listId = currentPlayerId + GAMES_LIST_SUFFIX,
+        var listId = getGamesListId(handlers.currentPlayerId),
             data = getSharedGroupEntry(listId, gameId);
         if (isEmpty(data)) {
             createSharedGroup(listId);
