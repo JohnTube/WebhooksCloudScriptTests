@@ -171,7 +171,7 @@ function checkWebhookArgs(args, timestamp) {
 		}
         if (!undefinedOrNull(args.State2) && !undefinedOrNull(args.State2.ActorList)) {
             if (args.State2.ActorList.length !== args.ActorCount) {
-                throw new PhotonException(2, 'ActorCount does not match ActorList.count', timestamp, args);
+                throw new PhotonException(2, 'ActorCount does not match State2.ActorList.count', timestamp, args);
             }
         }
 	}
@@ -275,7 +275,7 @@ function loadGameData(gameId) {
             data = getSharedGroupEntry(listId, gameId);
         }
         return data;
-    } catch (e) { logException(getISOTimestamp(), 'loadGameData:' + gameId, String(e.stack)); throw e; }
+    } catch (e) { logException(getISOTimestamp(), 'loadGameData:' + gameId + ',currentPlayerId=' + currentPlayerId, String(e.stack)); throw e; }
 }
 
 function saveGameData(gameId, data) {
@@ -333,6 +333,7 @@ handlers.RoomCreated = function (args) {
             createGame(args, timestamp);
             return {ResultCode: 0, Message: 'OK'};
         } else if (args.Type === 'Load') {
+            logException(timestamp, {Webhook: args, currentPlayerId: currentPlayerId}, 'RoomCreated');
             data = loadGameData(args.GameId);
             //logException(timestamp, data, '');
             if (!undefinedOrNull(data.errorCode) || undefinedOrNull(data.State)) {
