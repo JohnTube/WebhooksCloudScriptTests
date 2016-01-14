@@ -336,8 +336,8 @@ handlers.RoomCreated = function (args) {
             return {ResultCode: 0, Message: 'OK'};
         } else if (args.Type === 'Load') {
             data = loadGameData(args.GameId);
-            logException(timestamp, data, '');
-            if (!undefinedOrNull(data.errorCode) || undefinedOrNull(data.State)) {
+            //logException(timestamp, data, '');
+            /*if (!undefinedOrNull(data.errorCode) || undefinedOrNull(data.State)) {
                 if (args.CreateIfNotExists === false) {
                     throw new PhotonException(5, 'Room=' + args.GameId + ' not found', timestamp, {Webhook: args, CustomState: data});
                 } else {
@@ -380,7 +380,7 @@ handlers.RoomCreated = function (args) {
                 }
             } else {
                 throw new PhotonException(3, 'Unexpected ActorNr in weird Load event', timestamp, {Webhook: args, CustomState: data});
-            }
+            }*/
             data.Actors[args.ActorNr].Inactive = false;
             if (undefinedOrNull(data.LoadEvents)) {
                 data.LoadEvents = {};
