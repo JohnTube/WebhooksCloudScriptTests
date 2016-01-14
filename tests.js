@@ -261,12 +261,9 @@ function checkWebhookArgs(args, timestamp) {
 function loadGameData(gameId) {
     'use strict';
     try {
-        if (undefinedOrNull(currentPlayerId)) {
-            throw new PhotonException(9, 'currentPlayerId is undefinedOrNull', getISOTimestamp(), {});
-        }
-        var listId = getGamesListId(currentPlayerId),
+        var listId = getGamesListId(String(currentPlayerId)),
             data = getSharedGroupEntry(listId, gameId);
-        if (!undefinedOrNull(data.errorCode)) {
+        if (isEmpty(data)) {
             createSharedGroup(listId);
             return data;
         }
