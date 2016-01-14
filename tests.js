@@ -45,13 +45,13 @@ function logException(timestamp, data, message) {
             Key: timestamp,
             Value: JSON.stringify({Message: message, Data: data})
         });
-    } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
+    } catch (e) { throw e; }
 }
 
 function createSharedGroup(id) {
     'use strict';
     try { return server.CreateSharedGroup({SharedGroupId : id});
-        } catch (e) { /*logException(getISOTimestamp(), 'createSharedGroup:' + id, e.stack);*/ throw e; }
+        } catch (e) { /*logException(getISOTimestamp(), 'createSharedGroup:' + id, String(e.stack));*/ throw e; }
 }
 
 function updateSharedGroupData(id, data) {
@@ -64,7 +64,7 @@ function updateSharedGroupData(id, data) {
             }
         }
         return server.UpdateSharedGroupData({ SharedGroupId: id, Data: data });
-    } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
+    } catch (e) { logException(getISOTimestamp(), 'updateSharedGroupData(' + id + ', ' + JSON.stringify(data) + ')', String(e.stack)); throw e; }
 }
 
 function getSharedGroupData(id, keys) {
@@ -82,17 +82,17 @@ function getSharedGroupData(id, keys) {
             }
         }
         return data;
-    } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
+    } catch (e) { logException(getISOTimestamp(), 'getSharedGroupData:' + id + ',' + JSON.stringify(keys), String(e.stack)); throw e; }
 }
 
 function deleteSharedGroup(id) {
     'use strict';
-    try { return server.DeleteSharedGroup({SharedGroupId : id}); } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
+    try { return server.DeleteSharedGroup({SharedGroupId : id}); } catch (e) { logException(getISOTimestamp(), 'deleteSharedGroup:' + id, String(e.stack)); throw e; }
 }
 
 function getSharedGroupEntry(id, key) {
     'use strict';
-    try { return getSharedGroupData(id, [key])[key]; } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
+    try { return getSharedGroupData(id, [key])[key]; } catch (e) { logException(getISOTimestamp(), 'getSharedGroupEntry:' + id + ',' + key, String(e.stack)); throw e; }
 }
 
 function updateSharedGroupEntry(id, key, value) {
@@ -101,19 +101,19 @@ function updateSharedGroupEntry(id, key, value) {
         var data = {};
         data[key] = value;
         return updateSharedGroupData(id, data);
-    } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
+    } catch (e) { logException(getISOTimestamp(), 'updateSharedGroupEntry:' + id + ',' + key + ',' + value, String(e.stack)); throw e; }
 }
 
 function deleteSharedGroupEntry(id, key) {
     'use strict';
-    try { return updateSharedGroupEntry(id, key, null); } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
+    try { return updateSharedGroupEntry(id, key, null); } catch (e) { logException(getISOTimestamp(), 'deleteSharedGroupEntry:' + id + ',' + key, String(e.stack)); throw e; }
 }
 
 var GAMES_LIST_SUFFIX = '_GamesList';
 
 function getGamesListId(playerId) {
     'use strict';
-    try { return String(playerId) + GAMES_LIST_SUFFIX; } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
+    try { return String(playerId) + GAMES_LIST_SUFFIX; } catch (e) { logException(getISOTimestamp(), 'getGamesListId:' + playerId, String(e.stack)); throw e; }
 }
 
 function PhotonException(code, msg, timestamp, data) {
@@ -273,7 +273,7 @@ function loadGameData(gameId) {
             }
         }*/
         return data;
-    } catch (e) { logException(getISOTimestamp(), null, e.stack); logException(getISOTimestamp(), null, e.stack); throw e; }
+    } catch (e) { logException(getISOTimestamp(), null, String(e.stack)); logException(getISOTimestamp(), null, String(e.stack)); throw e; }
 }
 
 function saveGameData(gameId, data) {
@@ -281,7 +281,7 @@ function saveGameData(gameId, data) {
     try {
         deleteSharedGroup(gameId);
         updateSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId, data);
-    } catch (e) { logException(getISOTimestamp(), null, e.stack); logException(getISOTimestamp(), null, e.stack); throw e; }
+    } catch (e) { logException(getISOTimestamp(), null, String(e.stack)); logException(getISOTimestamp(), null, String(e.stack)); throw e; }
 }
 
 function deleteGameData(gameId, data) {
@@ -289,7 +289,7 @@ function deleteGameData(gameId, data) {
     try {
         deleteSharedGroup(gameId);
         deleteSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId);
-    } catch (e) { logException(getISOTimestamp(), null, e.stack); logException(getISOTimestamp(), null, e.stack); throw e; }
+    } catch (e) { logException(getISOTimestamp(), null, String(e.stack)); logException(getISOTimestamp(), null, String(e.stack)); throw e; }
 }
     
 function addGameToList(gameId, data) {
@@ -297,7 +297,7 @@ function addGameToList(gameId, data) {
     try {
         beforeAddingGameToPlayerList(gameId, data);
         updateSharedGroupEntry(getGamesListId(currentPlayerId), gameId, data);
-    } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
+    } catch (e) { logException(getISOTimestamp(), null, String(e.stack)); throw e; }
 }
 
 function createGame(args, timestamp) {
@@ -315,7 +315,7 @@ function createGame(args, timestamp) {
         onGameCreated(args, data);
         updateSharedGroupData(args.GameId, data);
         addGameToList(args.GameId, data);
-    } catch (e) { logException(getISOTimestamp(), null, e.stack);
+    } catch (e) { logException(getISOTimestamp(), null, String(e.stack));
         throw new PhotonException(7, 'Error creating new game: ' + args.GameId, timestamp, {Webhook: args}); }
 }
 
@@ -393,7 +393,7 @@ handlers.RoomCreated = function (args) {
         if (err instanceof PhotonException) {
             return {ResultCode: err.ResultCode, Message: err.Message};
         }
-        return {ResultCode: 100, Message: err.name + ': ' + err.message + ' @' + err.stack};
+        return {ResultCode: 100, Message: String(err.stack)};
     }
 };
 
@@ -436,7 +436,7 @@ handlers.RoomClosed = function (args) {
         if (e instanceof PhotonException) {
             return {ResultCode: e.ResultCode, Message: e.Message};
         }
-        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + e.stack};
+        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + String(e.stack)};
     }
 };
 
@@ -487,7 +487,7 @@ handlers.RoomJoined = function (args) {
         if (e instanceof PhotonException) {
             return {ResultCode: e.ResultCode, Message: e.Message};
         }
-        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + e.stack};
+        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + String(e.stack)};
     }
 };
 
@@ -528,7 +528,7 @@ handlers.RoomLeft = function (args) {
         if (e instanceof PhotonException) {
             return {ResultCode: e.ResultCode, Message: e.Message};
         }
-        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + e.stack};
+        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + String(e.stack)};
     }
 };
 
@@ -557,7 +557,7 @@ handlers.RoomPropertyUpdated = function (args) {
         if (e instanceof PhotonException) {
             return {ResultCode: e.ResultCode, Message: e.Message};
         }
-        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + e.stack};
+        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + String(e.stack)};
     }
 };
 
@@ -584,7 +584,7 @@ handlers.RoomEventRaised = function (args) {
         if (e instanceof PhotonException) {
             return {ResultCode: e.ResultCode, Message: e.Message};
         }
-        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + e.stack};
+        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + String(e.stack)};
     }
 };
 
@@ -636,7 +636,7 @@ handlers.GetRoomData = function (args) {
         if (e instanceof PhotonException) {
             return {ResultCode: e.ResultCode, Message: e.Message};
         }
-        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + e.stack};
+        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + String(e.stack)};
     }
 };
 
@@ -679,6 +679,6 @@ handlers.GetGameList = function (args) {
         if (e instanceof PhotonException) {
             return {ResultCode: e.ResultCode, Message: e.Message};
         }
-        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + e.stack};
+        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + String(e.stack)};
     }
 };
