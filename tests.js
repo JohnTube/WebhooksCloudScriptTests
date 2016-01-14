@@ -259,19 +259,19 @@ function checkWebhookArgs(args, timestamp) {
 function loadGameData(gameId) {
     'use strict';
     try {
-        var /*key,*/ data = getSharedGroupEntry(getGamesListId(currentPlayerId), gameId);
+        if (undefinedOrNull(currentPlayerId)) {
+            throw new PhotonException(9, 'currentPlayerId is undefinedOrNull', getISOTimestamp(), {});
+        }
+        var listId = getGamesListId(currentPlayerId),
+            data = getSharedGroupEntry(listId, gameId);
         if (!undefinedOrNull(data.errorCode)) {
-            createSharedGroup(getGamesListId(currentPlayerId));
+            createSharedGroup(listId);
             return data;
         }
         if (data.Creation.UserId !== currentPlayerId) {
-            data = getSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId);
+            listId = getGamesListId(data.Creation.UserId);
+            data = getSharedGroupEntry(listId, gameId);
         }
-        /*for (key in data) {
-            if (data.hasOwnProperty(key) && isString(data[key])) {
-                data[key] = JSON.parse(data[key]);
-            }
-        }*/
         return data;
     } catch (e) { logException(getISOTimestamp(), 'loadGameData:' + gameId, String(e.stack)); throw e; }
 }
@@ -296,7 +296,7 @@ function addGameToList(gameId, data) {
     'use strict';
     try {
         beforeAddingGameToPlayerList(gameId, data);
-        updateSharedGroupEntry(getGamesListId(currentPlayerId), gameId, data);
+        updateSharedGroupEntry(getGamesListId(handlers.currentPlayerId), gameId, data);
     } catch (e) { logException(getISOTimestamp(), 'deleteGameData:' + gameId + ',' + JSON.stringify(data), String(e.stack)); throw e; }
 }
 
