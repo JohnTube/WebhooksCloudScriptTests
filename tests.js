@@ -51,7 +51,7 @@ function logException(timestamp, data, message) {
 function createSharedGroup(id) {
     'use strict';
     try { return server.CreateSharedGroup({SharedGroupId : id});
-        } catch (e) { logException(getISOTimestamp(), 'createSharedGroup:' + id, e.stack); throw e; }
+        } catch (e) { /*logException(getISOTimestamp(), 'createSharedGroup:' + id, e.stack); throw e;*/ }
 }
 
 function updateSharedGroupData(id, data) {
@@ -259,7 +259,7 @@ function checkWebhookArgs(args, timestamp) {
 function loadGameData(gameId) {
     'use strict';
     try {
-        var key, data = getSharedGroupEntry(getGamesListId(currentPlayerId), gameId);
+        var /*key,*/ data = getSharedGroupEntry(getGamesListId(currentPlayerId), gameId);
         if (!undefinedOrNull(data.errorCode)) {
             createSharedGroup(getGamesListId(currentPlayerId));
             return data;
@@ -267,11 +267,11 @@ function loadGameData(gameId) {
         if (data.Creation.UserId !== currentPlayerId) {
             data = getSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId);
         }
-        for (key in data) {
+        /*for (key in data) {
             if (data.hasOwnProperty(key) && isString(data[key])) {
                 data[key] = JSON.parse(data[key]);
             }
-        }
+        }*/
         return data;
     } catch (e) { logException(getISOTimestamp(), null, e.stack); logException(getISOTimestamp(), null, e.stack); throw e; }
 }
@@ -390,7 +390,7 @@ handlers.RoomCreated = function (args) {
             try { createSharedGroup(args.GameId); } catch (x) {}
             onGameLoaded(args, data);
             updateSharedGroupData(args.GameId, data);
-            return {ResultCode: 0, Message: 'OK', State: data.State};
+            return {ResultCode: 0, Message: 'OK', State: JSON.parse(data.State)};
         } else {
             throw new PhotonException(2, 'Wrong PathCreate Type=' + args.Type, timestamp, {Webhook: args});
         }
