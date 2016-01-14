@@ -266,11 +266,11 @@ function loadGameData(gameId) {
         if (data.Creation.UserId !== currentPlayerId) {
             data = getSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId);
         }
-        for (key in data) {
+        /*for (key in data) {
             if (data.hasOwnProperty(key) && isString(data[key])) {
                 data[key] = JSON.parse(data[key]);
             }
-        }
+        }*/
         return data;
     } catch (e) { throw e; }
 }
@@ -388,7 +388,7 @@ handlers.RoomCreated = function (args) {
             createSharedGroup(args.GameId);
             onGameLoaded(args, data);
             updateSharedGroupData(args.GameId, data);
-            return {ResultCode: 0, Message: 'OK', State: data.State};
+            return {ResultCode: 0, Message: 'OK', State: JSON.parse(data.State)};
         } else {
             throw new PhotonException(2, 'Wrong PathCreate Type=' + args.Type, timestamp, {Webhook: args});
         }
