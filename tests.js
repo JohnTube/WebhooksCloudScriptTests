@@ -71,7 +71,7 @@ function deleteSharedGroup(id) {
 
 function getSharedGroupEntry(id, key) {
     'use strict';
-    return getSharedGroupData(id, [key]);
+    return getSharedGroupData(id, [key])[key];
 }
 
 function updateSharedGroupEntry(id, key, value) {
@@ -254,7 +254,6 @@ function loadGameData(gameId) {
         createSharedGroup(getGamesListId(currentPlayerId));
         return data;
     }
-    logException(getISOTimestamp(), data, 'test');
     if (data.Creation.UserId !== currentPlayerId) {
         data = getSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId);
     }
