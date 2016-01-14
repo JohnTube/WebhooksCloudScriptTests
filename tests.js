@@ -50,7 +50,8 @@ function logException(timestamp, data, message) {
 
 function createSharedGroup(id) {
     'use strict';
-    try { return server.CreateSharedGroup({SharedGroupId : id}); } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
+    try { return server.CreateSharedGroup({SharedGroupId : id});
+        } catch (e) { logException(getISOTimestamp(), 'createSharedGroup:' + id, e.stack); throw e; }
 }
 
 function updateSharedGroupData(id, data) {
@@ -386,7 +387,7 @@ handlers.RoomCreated = function (args) {
                 data.LoadEvents = {};
             }
             data.LoadEvents[timestamp] = {ActorNr: args.ActorNr, UserId: args.UserId};
-            createSharedGroup(args.GameId);
+            try { createSharedGroup(args.GameId); } catch (x) {}
             onGameLoaded(args, data);
             updateSharedGroupData(args.GameId, data);
             return {ResultCode: 0, Message: 'OK', State: data.State};
