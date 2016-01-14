@@ -273,7 +273,7 @@ function loadGameData(gameId) {
             }
         }*/
         return data;
-    } catch (e) { logException(getISOTimestamp(), null, String(e.stack)); logException(getISOTimestamp(), null, String(e.stack)); throw e; }
+    } catch (e) { logException(getISOTimestamp(), 'loadGameData:' + gameId, String(e.stack)); throw e; }
 }
 
 function saveGameData(gameId, data) {
@@ -281,7 +281,7 @@ function saveGameData(gameId, data) {
     try {
         deleteSharedGroup(gameId);
         updateSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId, data);
-    } catch (e) { logException(getISOTimestamp(), null, String(e.stack)); logException(getISOTimestamp(), null, String(e.stack)); throw e; }
+    } catch (e) { logException(getISOTimestamp(), 'saveGameData:' + gameId + ',' + JSON.stringify(data), String(e.stack)); throw e; }
 }
 
 function deleteGameData(gameId, data) {
@@ -289,7 +289,7 @@ function deleteGameData(gameId, data) {
     try {
         deleteSharedGroup(gameId);
         deleteSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId);
-    } catch (e) { logException(getISOTimestamp(), null, String(e.stack)); logException(getISOTimestamp(), null, String(e.stack)); throw e; }
+    } catch (e) { logException(getISOTimestamp(), 'deleteGameData:' + gameId + ',' + JSON.stringify(data), String(e.stack)); throw e; }
 }
     
 function addGameToList(gameId, data) {
@@ -297,7 +297,7 @@ function addGameToList(gameId, data) {
     try {
         beforeAddingGameToPlayerList(gameId, data);
         updateSharedGroupEntry(getGamesListId(currentPlayerId), gameId, data);
-    } catch (e) { logException(getISOTimestamp(), null, String(e.stack)); throw e; }
+    } catch (e) { logException(getISOTimestamp(), 'deleteGameData:' + gameId + ',' + JSON.stringify(data), String(e.stack)); throw e; }
 }
 
 function createGame(args, timestamp) {
@@ -654,7 +654,9 @@ handlers.GetGameList = function (args) {
         for (gameKey in gameList) {
             if (gameList.hasOwnProperty(gameKey)) {
                 if (gameList[gameKey].Creation.UserId === currentPlayerId) {
-                    data[gameKey] = {ActorNr: 1, Properties: gameList[gameKey].State.CustomProperties};
+                    if (!undefinedOrNull(gameList[gameKey].Actors['1']) && gameList[gameKey].Actors['1'].UserId === currentPlayerId) {
+                        data[gameKey] = {ActorNr: 1, Properties: gameList[gameKey].State.CustomProperties};
+                    }
                 } else {
                     data[gameKey] = {ActorNr: gameList[gameKey].ActorNr};
                     if (undefinedOrNull(listToLoad[gameList[gameKey].Creation.UserId])) {
