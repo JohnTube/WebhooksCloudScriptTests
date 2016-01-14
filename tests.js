@@ -254,6 +254,7 @@ function loadGameData(gameId) {
         createSharedGroup(getGamesListId(currentPlayerId));
         return data;
     }
+    logException(getISOTimestamp(), data, 'test');
     if (data.Creation.UserId !== currentPlayerId) {
         data = getSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId);
     }
