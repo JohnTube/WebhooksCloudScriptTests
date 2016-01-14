@@ -48,6 +48,13 @@ function logException(timestamp, data, message) {
     } catch (e) { throw e; }
 }
 
+var GAMES_LIST_SUFFIX = '_GamesList';
+
+function getGamesListId(playerId) {
+    'use strict';
+    return playerId + GAMES_LIST_SUFFIX;
+}
+
 function createSharedGroup(id) {
     'use strict';
     try { return server.CreateSharedGroup({SharedGroupId : id});
@@ -109,12 +116,7 @@ function deleteSharedGroupEntry(id, key) {
     try { return updateSharedGroupEntry(id, key, null); } catch (e) { logException(getISOTimestamp(), 'deleteSharedGroupEntry:' + id + ',' + key, String(e.stack)); throw e; }
 }
 
-var GAMES_LIST_SUFFIX = '_GamesList';
 
-function getGamesListId(playerId) {
-    'use strict';
-    return String(playerId) + GAMES_LIST_SUFFIX;
-}
 
 function PhotonException(code, msg, timestamp, data) {
     'use strict';
@@ -256,10 +258,13 @@ function checkWebhookArgs(args, timestamp) {
 }
 
 
-function loadGameData(userId, gameId) {
+function loadGameData(gameId) {
     'use strict';
     try {
-        var listId = getGamesListId(userId),
+        if (undefinedOrNull(currentPlayerId)) {
+            throw new PhotonException(9, 'currentPlayerId is undefinedOrNull', getISOTimestamp(), {});
+        }
+        var listId = getGamesListId(currentPlayerId),
             data = getSharedGroupEntry(listId, gameId);
         if (!undefinedOrNull(data.errorCode)) {
             createSharedGroup(listId);
@@ -270,7 +275,7 @@ function loadGameData(userId, gameId) {
             data = getSharedGroupEntry(listId, gameId);
         }
         return data;
-    } catch (e) { logException(getISOTimestamp(), 'loadGameData:' + userId + ',' + gameId, String(e.stack)); throw e; }
+    } catch (e) { logException(getISOTimestamp(), 'loadGameData:' + gameId, String(e.stack)); throw e; }
 }
 
 function saveGameData(gameId, data) {
@@ -328,7 +333,7 @@ handlers.RoomCreated = function (args) {
             createGame(args, timestamp);
             return {ResultCode: 0, Message: 'OK'};
         } else if (args.Type === 'Load') {
-            data = loadGameData(args.UserId, args.GameId);
+            data = loadGameData(args.GameId);
             //logException(timestamp, data, '');
             if (!undefinedOrNull(data.errorCode) || undefinedOrNull(data.State)) {
                 if (args.CreateIfNotExists === false) {
