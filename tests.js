@@ -52,14 +52,11 @@ function getSharedGroupData(id, keys) {
     'use strict';
     var data = {}, key;
     if (undefinedOrNull(keys)) {
-        data = server.GetSharedGroupData({ SharedGroupId: id });
+        data = server.GetSharedGroupData({ SharedGroupId: id }).Data;
     } else {
-        data = server.GetSharedGroupData({ SharedGroupId: id, Keys: keys });
+        data = server.GetSharedGroupData({ SharedGroupId: id, Keys: keys }).Data;
     }
-    if (data.code !== 200) {
-        return data;
-    }
-    data = data.Data;
+    data = data.;
     for (key in data) {
         if (data.hasOwnProperty(key)) {
             data[key] = JSON.parse(data[key].Value); // 'LastUpdated' and 'Permission' properties are overwritten
@@ -254,7 +251,7 @@ function checkWebhookArgs(args, timestamp) {
 function loadGameData(gameId) {
     'use strict';
     var data = getSharedGroupEntry(getGamesListId(currentPlayerId), gameId);
-    if (!undefinedOrNull(data.code)) {
+    if (!undefinedOrNull(data.errorCode)) {
         createSharedGroup(getGamesListId(currentPlayerId));
         return data;
     }
