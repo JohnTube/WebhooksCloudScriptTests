@@ -51,7 +51,7 @@ function logException(timestamp, data, message) {
 function createSharedGroup(id) {
     'use strict';
     try { return server.CreateSharedGroup({SharedGroupId : id});
-        } catch (e) { /*logException(getISOTimestamp(), 'createSharedGroup:' + id, e.stack); throw e;*/ }
+        } catch (e) { /*logException(getISOTimestamp(), 'createSharedGroup:' + id, e.stack);*/ throw e; }
 }
 
 function updateSharedGroupData(id, data) {
@@ -303,25 +303,20 @@ function addGameToList(gameId, data) {
 function createGame(args, timestamp) {
     'use strict';
     try {
-        var data = createSharedGroup(args.GameId);
-        if (data.code === 200) {
-            data = {};
-            data.Env = {Region: args.Region, AppVersion: args.AppVersion, AppId: args.AppId, TitleId: script.titleId,
-                        CloudScriptVersion: script.version, CloudScriptRevision: script.revision, PlayFabServerVersion: server.version,
-                       WebhooksVersion: undefinedOrNull(args.Nickname) ? '1.0' : '1.2'};
-            data.RoomOptions = args.CreateOptions;
-            data.Creation = {Timestamp: timestamp, UserId: args.UserId, Type: args.Type};
-            data.Actors = {1: {UserId: args.UserId, Inactive: false}};
-            data.NextActorNr = 2;
-            onGameCreated(args, data);
-            updateSharedGroupData(args.GameId, data);
-            addGameToList(args.GameId, data);
-        } else if (data.errorCode === 1088) {
-            throw new PhotonException(7, 'Game already exist', timestamp, {Webhook: args});
-        } else {
-            throw new PhotonException(7, 'Error creating new game: ' + data.errorMessage, timestamp, {Webhook: args});
-        }
-    } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
+        createSharedGroup(args.GameId);
+        var data = {};
+        data.Env = {Region: args.Region, AppVersion: args.AppVersion, AppId: args.AppId, TitleId: script.titleId,
+                    CloudScriptVersion: script.version, CloudScriptRevision: script.revision, PlayFabServerVersion: server.version,
+                   WebhooksVersion: undefinedOrNull(args.Nickname) ? '1.0' : '1.2'};
+        data.RoomOptions = args.CreateOptions;
+        data.Creation = {Timestamp: timestamp, UserId: args.UserId, Type: args.Type};
+        data.Actors = {1: {UserId: args.UserId, Inactive: false}};
+        data.NextActorNr = 2;
+        onGameCreated(args, data);
+        updateSharedGroupData(args.GameId, data);
+        addGameToList(args.GameId, data);
+    } catch (e) { logException(getISOTimestamp(), null, e.stack);
+        throw new PhotonException(7, 'Error creating new game: ' + args.GameId, timestamp, {Webhook: args}); }
 }
 
 
