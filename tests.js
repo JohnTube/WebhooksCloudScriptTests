@@ -378,7 +378,7 @@ handlers.RoomCreated = function (args) {
         if (e instanceof PhotonException) {
             return {ResultCode: e.ResultCode, Message: e.Message};
         }
-        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + e.stack};
+        return {ResultCode: 100, Message: e};
     }
 };
 
