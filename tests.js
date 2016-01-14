@@ -113,7 +113,7 @@ var GAMES_LIST_SUFFIX = '_GamesList';
 
 function getGamesListId(playerId) {
     'use strict';
-    try { return String(playerId) + GAMES_LIST_SUFFIX; } catch (e) { logException(getISOTimestamp(), 'getGamesListId:' + playerId, String(e.stack)); throw e; }
+    return String(playerId) + GAMES_LIST_SUFFIX;
 }
 
 function PhotonException(code, msg, timestamp, data) {
