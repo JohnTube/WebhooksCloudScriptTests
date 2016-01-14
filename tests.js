@@ -258,7 +258,7 @@ function loadGameData(gameId) {
         data = getSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId);
     }
     for (key in data) {
-        if (data.hasOwnProperty(key)) {
+        if (data.hasOwnProperty(key) && isString(data[key])) {
             data[key] = JSON.parse(data[key]);
         }
     }
