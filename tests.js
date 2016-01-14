@@ -183,6 +183,9 @@ function checkWebhookArgs(args, timestamp) {
         }
         break;
     case 'Join':
+        if (args.ActorNr <= 0) {
+            throw new PhotonException(2, 'ActorNr <= 1 and Type == Join', timestamp, args);
+        }
         break;
     case 'Player':
         if (undefinedOrNull(args.TargetActor)) {
@@ -332,7 +335,7 @@ handlers.RoomCreated = function (args) {
                 }
             } else if (data.RoomOptions.PlayerTTL !== 0 && data.NextActorNr > args.ActorNr) {
                 if (args.ActorNr > 0) {
-                    if (data.ActiveActors[args.ActorNr].Inactive === false) {
+                    if (data.Actors[args.ActorNr].Inactive === false) {
                         throw new PhotonException(2, 'Actor is already joined', timestamp, {Webhook: args, CustomState: data});
                     } else if (data.RoomOptions.CheckUserOnJoin === true && args.UserId !== data.Actors[args.ActorNr].UserId) {
                         throw new PhotonException(2, 'Illegal rejoin with different UserId', timestamp, {Webhook: args, CustomState: data});
@@ -342,7 +345,7 @@ handlers.RoomCreated = function (args) {
                 } else if (data.RoomOptions.CheckUserOnJoin === true) {
                     for (actorNr in data.Actors) {
                         if (data.Actors.hasOwnProperty(actorNr) && data.Actors[actorNr].UserId === currentPlayerId) {
-                            if (data.ActiveActors[actorNr].Inactive === false) {
+                            if (data.Actors[actorNr].Inactive === false) {
                                 throw new PhotonException(2, 'Actor is already joined?!', timestamp, {Webhook: args, CustomState: data});
                             }
                             args.ActorNr = actorNr;
@@ -434,7 +437,7 @@ handlers.RoomJoined = function (args) {
         }
         // TODO: compare data.Env with current env
         if (data.RoomOptions.PlayerTTL !== 0 && data.NextActorNr > args.ActorNr) { // ActorNr is already claimed, should be a rejoin
-            if (data.ActiveActors[args.ActorNr].Inactive === false) {
+            if (data.Actors[args.ActorNr].Inactive === false) {
                 throw new PhotonException(2, 'Actor is already joined', timestamp, {Webhook: args, CustomState: data});
             } else if (data.RoomOptions.CheckUserOnJoin === true && args.UserId !== data.Actors[args.ActorNr].UserId) {
                 throw new PhotonException(2, 'Illegal rejoin with different UserId', timestamp, {Webhook: args, CustomState: data});
