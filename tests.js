@@ -256,13 +256,10 @@ function checkWebhookArgs(args, timestamp) {
 }
 
 
-function loadGameData(gameId) {
+function loadGameData(userId, gameId) {
     'use strict';
     try {
-        if (undefinedOrNull(currentPlayerId)) {
-            throw new PhotonException(9, 'currentPlayerId is undefinedOrNull', getISOTimestamp(), {});
-        }
-        var listId = getGamesListId(currentPlayerId),
+        var listId = getGamesListId(userId),
             data = getSharedGroupEntry(listId, gameId);
         if (!undefinedOrNull(data.errorCode)) {
             createSharedGroup(listId);
@@ -273,7 +270,7 @@ function loadGameData(gameId) {
             data = getSharedGroupEntry(listId, gameId);
         }
         return data;
-    } catch (e) { logException(getISOTimestamp(), 'loadGameData:' + gameId, String(e.stack)); throw e; }
+    } catch (e) { logException(getISOTimestamp(), 'loadGameData:' + userId + ',' + gameId, String(e.stack)); throw e; }
 }
 
 function saveGameData(gameId, data) {
@@ -331,7 +328,7 @@ handlers.RoomCreated = function (args) {
             createGame(args, timestamp);
             return {ResultCode: 0, Message: 'OK'};
         } else if (args.Type === 'Load') {
-            data = loadGameData(args.GameId);
+            data = loadGameData(args.UserId, args.GameId);
             //logException(timestamp, data, '');
             if (!undefinedOrNull(data.errorCode) || undefinedOrNull(data.State)) {
                 if (args.CreateIfNotExists === false) {
@@ -436,7 +433,7 @@ handlers.RoomClosed = function (args) {
         if (e instanceof PhotonException) {
             return {ResultCode: e.ResultCode, Message: e.Message};
         }
-        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + String(e.stack)};
+        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + e.stack};
     }
 };
 
