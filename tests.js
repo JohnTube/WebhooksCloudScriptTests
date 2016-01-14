@@ -392,11 +392,11 @@ handlers.RoomCreated = function (args) {
         } else {
             throw new PhotonException(2, 'Wrong PathCreate Type=' + args.Type, timestamp, {Webhook: args});
         }
-    } catch (e) {
-        if (e instanceof PhotonException) {
-            return {ResultCode: e.ResultCode, Message: e.Message};
+    } catch (err) {
+        if (err instanceof PhotonException) {
+            return {ResultCode: err.ResultCode, Message: err.Message};
         }
-        return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + e.stack};
+        return {ResultCode: 100, Message: err.name + ': ' + err.message + ' @' + err.stack};
     }
 };
 
