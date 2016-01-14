@@ -249,13 +249,18 @@ function checkWebhookArgs(args, timestamp) {
 
 function loadGameData(gameId) {
     'use strict';
-    var data = getSharedGroupEntry(getGamesListId(currentPlayerId), gameId);
+    var key, data = getSharedGroupEntry(getGamesListId(currentPlayerId), gameId);
     if (!undefinedOrNull(data.errorCode)) {
         createSharedGroup(getGamesListId(currentPlayerId));
         return data;
     }
     if (data.Creation.UserId !== currentPlayerId) {
         data = getSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId);
+    }
+    for (key in data) {
+        if (data.hasOwnProperty(key)) {
+            data[key] = JSON.parse(data[key]);
+        }
     }
     return data;
 }
