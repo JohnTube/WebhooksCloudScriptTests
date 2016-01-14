@@ -37,6 +37,22 @@ function isString(obj) {
     return (typeof obj === 'string' || obj instanceof String);
 }
 
+function getISOTimestamp() {
+    'use strict';
+    try { return (new Date()).toISOString() + Math.random(); } catch (e) { throw e; }
+}
+
+function logException(timestamp, data, message) {
+    'use strict';
+    try {
+        //TEMPORARY solution until log functions' output is available from GameManager
+        return server.SetTitleData({
+            Key: timestamp,
+            Value: JSON.stringify({Message: message, Data: data})
+        });
+    } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
+}
+
 function updateSharedGroupData(id, data) {
     'use strict';
     try {
@@ -47,7 +63,7 @@ function updateSharedGroupData(id, data) {
             }
         }
         return server.UpdateSharedGroupData({ SharedGroupId: id, Data: data });
-    } catch (e) { throw e; }
+    } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
 }
 
 function getSharedGroupData(id, keys) {
@@ -65,17 +81,17 @@ function getSharedGroupData(id, keys) {
             }
         }
         return data;
-    } catch (e) { throw e; }
+    } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
 }
 
 function deleteSharedGroup(id) {
     'use strict';
-    try { return server.DeleteSharedGroup({SharedGroupId : id}); } catch (e) { throw e; }
+    try { return server.DeleteSharedGroup({SharedGroupId : id}); } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
 }
 
 function getSharedGroupEntry(id, key) {
     'use strict';
-    try { return getSharedGroupData(id, [key])[key]; } catch (e) { throw e; }
+    try { return getSharedGroupData(id, [key])[key]; } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
 }
 
 function updateSharedGroupEntry(id, key, value) {
@@ -84,35 +100,19 @@ function updateSharedGroupEntry(id, key, value) {
         var data = {};
         data[key] = value;
         return updateSharedGroupData(id, data);
-    } catch (e) { throw e; }
+    } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
 }
 
 function deleteSharedGroupEntry(id, key) {
     'use strict';
-    try { return updateSharedGroupEntry(id, key, null); } catch (e) { throw e; }
-}
-
-function getISOTimestamp() {
-    'use strict';
-    try { return (new Date()).toISOString() + Math.random(); } catch (e) { throw e; }
-}
-
-function logException(timestamp, data, message) {
-    'use strict';
-    try {
-        //TEMPORARY solution until log functions' output is available from GameManager
-        return server.SetTitleData({
-            Key: timestamp,
-            Value: JSON.stringify({Message: message, Data: data})
-        });
-    } catch (e) { throw e; }
+    try { return updateSharedGroupEntry(id, key, null); } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
 }
 
 var GAMES_LIST_SUFFIX = '_GamesList';
 
 function getGamesListId(playerId) {
     'use strict';
-    try { return String(playerId) + GAMES_LIST_SUFFIX; } catch (e) { throw e; }
+    try { return String(playerId) + GAMES_LIST_SUFFIX; } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
 }
 
 function PhotonException(code, msg, timestamp, data) {
@@ -272,7 +272,7 @@ function loadGameData(gameId) {
             }
         }*/
         return data;
-    } catch (e) { throw e; }
+    } catch (e) { logException(getISOTimestamp(), null, e.stack); logException(getISOTimestamp(), null, e.stack); throw e; }
 }
 
 function saveGameData(gameId, data) {
@@ -280,7 +280,7 @@ function saveGameData(gameId, data) {
     try {
         deleteSharedGroup(gameId);
         updateSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId, data);
-    } catch (e) { throw e; }
+    } catch (e) { logException(getISOTimestamp(), null, e.stack); logException(getISOTimestamp(), null, e.stack); throw e; }
 }
 
 function deleteGameData(gameId, data) {
@@ -288,7 +288,7 @@ function deleteGameData(gameId, data) {
     try {
         deleteSharedGroup(gameId);
         deleteSharedGroupEntry(getGamesListId(data.Creation.UserId), gameId);
-    } catch (e) { throw e; }
+    } catch (e) { logException(getISOTimestamp(), null, e.stack); logException(getISOTimestamp(), null, e.stack); throw e; }
 }
     
 function addGameToList(gameId, data) {
@@ -296,7 +296,7 @@ function addGameToList(gameId, data) {
     try {
         beforeAddingGameToPlayerList(gameId, data);
         updateSharedGroupEntry(getGamesListId(currentPlayerId), gameId, data);
-    } catch (e) { throw e; }
+    } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
 }
 
 function createGame(args, timestamp) {
@@ -320,7 +320,7 @@ function createGame(args, timestamp) {
         } else {
             throw new PhotonException(7, 'Error creating new game: ' + data.errorMessage, timestamp, {Webhook: args});
         }
-    } catch (e) { throw e; }
+    } catch (e) { logException(getISOTimestamp(), null, e.stack); throw e; }
 }
 
 
