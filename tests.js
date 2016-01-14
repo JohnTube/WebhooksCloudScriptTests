@@ -56,7 +56,6 @@ function getSharedGroupData(id, keys) {
     } else {
         data = server.GetSharedGroupData({ SharedGroupId: id, Keys: keys }).Data;
     }
-    data = data.;
     for (key in data) {
         if (data.hasOwnProperty(key)) {
             data[key] = JSON.parse(data[key].Value); // 'LastUpdated' and 'Permission' properties are overwritten
