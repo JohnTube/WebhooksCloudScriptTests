@@ -48,11 +48,13 @@ function logException(timestamp, data, message) {
     } catch (e) { throw e; }
 }
 
-var GAMES_LIST_SUFFIX = '_GamesList';
-
 function getGamesListId(playerId) {
     'use strict';
-    return playerId + GAMES_LIST_SUFFIX;
+    if (undefinedOrNull(playerId)) {
+        playerId = currentPlayerId;
+    }
+    logException(getISOTimestamp(), playerId, 'getGamesListId');
+    return playerId + '_GamesList';
 }
 
 function createSharedGroup(id) {
@@ -261,7 +263,7 @@ function checkWebhookArgs(args, timestamp) {
 function loadGameData(gameId) {
     'use strict';
     try {
-        var listId = getGamesListId(handlers.currentPlayerId),
+        var listId = getGamesListId(currentPlayerId),
             data = getSharedGroupEntry(listId, gameId);
         if (isEmpty(data)) {
             createSharedGroup(listId);
