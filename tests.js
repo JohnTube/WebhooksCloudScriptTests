@@ -53,7 +53,7 @@ function getGamesListId(playerId) {
     if (undefinedOrNull(playerId)) {
         playerId = currentPlayerId;
     }
-    logException(getISOTimestamp(), playerId, 'getGamesListId');
+    //logException(getISOTimestamp(), playerId, 'getGamesListId');
     return playerId + '_GamesList';
 }
 
@@ -263,7 +263,7 @@ function checkWebhookArgs(args, timestamp) {
 function loadGameData(gameId) {
     'use strict';
     try {
-        var listId = getGamesListId(currentPlayerId),
+        var listId = getGamesListId(),
             data = getSharedGroupEntry(listId, gameId);
         if (isEmpty(data)) {
             createSharedGroup(listId);
@@ -335,7 +335,7 @@ handlers.RoomCreated = function (args) {
             logException(timestamp, {Webhook: args, currentPlayerId: currentPlayerId}, 'RoomCreated');
             data = loadGameData(args.GameId);
             //logException(timestamp, data, '');
-            if (!undefinedOrNull(data.errorCode) || undefinedOrNull(data.State)) {
+            if (undefinedOrNull(data.State)) {
                 if (args.CreateIfNotExists === false) {
                     throw new PhotonException(5, 'Room=' + args.GameId + ' not found', timestamp, {Webhook: args, CustomState: data});
                 } else {
@@ -517,7 +517,7 @@ handlers.RoomLeft = function (args) {
             data.Actors[args.ActorNr].Inactive = true;
         } else if (args.ActorNr !== 1) { // temporary fix
             delete data.Actors[args.ActorNr];
-            deleteSharedGroupEntry(getGamesListId(currentPlayerId), args.GameId);
+            deleteSharedGroupEntry(getGamesListId(), args.GameId);
         }
         if (undefinedOrNull(data.LeaveEvents)) {
             data.LeaveEvents = {};
@@ -611,9 +611,9 @@ handlers.onLogin = function (args) {
     'use strict';
     try {
         var timestamp = getISOTimestamp(),
-            data = getSharedGroupData(getGamesListId(currentPlayerId));
+            data = getSharedGroupData(getGamesListId());
         if (!undefinedOrNull(data.code)) {
-            createSharedGroup(getGamesListId(currentPlayerId));
+            createSharedGroup(getGamesListId());
             return {ResultCode: 0, Data: {}};
         }
         return {ResultCode: 0, Data: data};
@@ -652,7 +652,7 @@ handlers.GetGameList = function (args) {
             userKey = '',
             data = {};
         checkWebRpcArgs(args);
-        gameList = getSharedGroupData(getGamesListId(currentPlayerId));
+        gameList = getSharedGroupData(getGamesListId());
         for (gameKey in gameList) {
             if (gameList.hasOwnProperty(gameKey)) {
                 if (gameList[gameKey].Creation.UserId === currentPlayerId) {
