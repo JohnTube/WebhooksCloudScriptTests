@@ -53,7 +53,6 @@ function getGamesListId(playerId) {
     if (undefinedOrNull(playerId)) {
         playerId = currentPlayerId;
     }
-    //logException(getISOTimestamp(), playerId, 'getGamesListId');
     return playerId + '_GamesList';
 }
 
@@ -316,8 +315,7 @@ function createGame(args, timestamp) {
         onGameCreated(args, data);
         updateSharedGroupData(args.GameId, data);
         addGameToList(args.GameId, data);
-    } catch (e) { logException(getISOTimestamp(), 'createGame:' + JSON.stringify(args) + ',' + timestamp, String(e.stack));
-        throw new PhotonException(7, 'Error creating new game: ' + args.GameId, timestamp, {Webhook: args}); }
+    } catch (e) { throw new PhotonException(7, 'Error creating new game: ' + args.GameId, timestamp, {Webhook: args}); }
 }
 
 
@@ -332,7 +330,6 @@ handlers.RoomCreated = function (args) {
             createGame(args, timestamp);
             return {ResultCode: 0, Message: 'OK'};
         } else if (args.Type === 'Load') {
-            logException(timestamp, {Webhook: args, currentPlayerId: currentPlayerId}, 'RoomCreated');
             data = loadGameData(args.GameId);
             logException(timestamp, data, 'loadedGameData');
             if (undefinedOrNull(data.State)) {
