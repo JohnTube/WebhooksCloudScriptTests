@@ -426,7 +426,7 @@ handlers.RoomClosed = function (args) {
             data.SaveEvents[timestamp] = {ActorCount: args.ActorCount};
             data.State = args.State;
             beforeSavingGame(args, data);
-            saveGameData(data);
+            saveGameData(args.GameId, data);
         } else {
             throw new PhotonException(2, 'Wrong PathClose Type=' + args.Type, timestamp, {Webhook: args, CustomState: data});
         }
