@@ -316,7 +316,7 @@ function createGame(args, timestamp) {
         onGameCreated(args, data);
         updateSharedGroupData(args.GameId, data);
         addGameToList(args.GameId, data);
-    } catch (e) { logException(getISOTimestamp(), null, String(e.stack));
+    } catch (e) { logException(getISOTimestamp(), 'createGame:' + JSON.stringify(args) + ',' + timestamp, String(e.stack));
         throw new PhotonException(7, 'Error creating new game: ' + args.GameId, timestamp, {Webhook: args}); }
 }
 
@@ -334,7 +334,7 @@ handlers.RoomCreated = function (args) {
         } else if (args.Type === 'Load') {
             logException(timestamp, {Webhook: args, currentPlayerId: currentPlayerId}, 'RoomCreated');
             data = loadGameData(args.GameId);
-            //logException(timestamp, data, '');
+            logException(timestamp, data, 'loadedGameData');
             if (undefinedOrNull(data.State)) {
                 if (args.CreateIfNotExists === false) {
                     throw new PhotonException(5, 'Room=' + args.GameId + ' not found', timestamp, {Webhook: args, CustomState: data});
