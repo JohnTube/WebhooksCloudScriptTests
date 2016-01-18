@@ -14,6 +14,7 @@
 /*global onPlayerPropertyChanged*/
 /*global onRoomPropertyChanged*/
 /*global onEventReceived*/
+/*global onEnvChanged*/
 
 // http://stackoverflow.com/a/21273362/1449056
 function undefinedOrNull(variable) {	'use strict'; return variable === undefined || variable === null; } //return variable == null;
@@ -318,6 +319,41 @@ function createGame(args, timestamp) {
     } catch (e) { throw new PhotonException(7, 'Error creating new game: ' + args.GameId, timestamp, {Webhook: args}); }
 }
 
+function compareEnv(timestamp, args, data) {
+    'use strict';
+    try {
+        if (args.AppId !== data.Env.AppId) {
+            onEnvChanged({timestamp: timestamp, type: 'AppId', loaded: data.Env.AppId, read: args.AppId}, args, data);
+        }
+        if (args.AppVersion !== data.Env.AppVersion) {
+            onEnvChanged({timestamp: timestamp, type: 'AppVersion', loaded: data.Env.Region, read: args.Region}, args, data);
+        }
+        if (args.Region !== data.Env.Region) {
+            onEnvChanged({timestamp: timestamp, type: 'Region', loaded: data.Env.Region, read: args.Region}, args, data);
+        }
+        if (args.Type !== 'Close' && args.Type !== 'Save') {
+            if (undefinedOrNull(args.Nickname) && data.Env.WebhooksVersion !== '1.0') {
+                onEnvChanged({timestamp: timestamp, type: 'WebhookVersion', loaded: data.Env.WebhooksVersion, read: '1.0'}, args, data);
+            }
+        } else {
+            if (undefinedOrNull(args.State2) && data.Env.WebhooksVersion !== '1.2') {
+                onEnvChanged({timestamp: timestamp, type: 'WebhookVersion', loaded: data.Env.WebhooksVersion, read: '1.2'}, args, data);
+            }
+        }
+        if (script.titleId !== data.Env.TitleId) {
+            onEnvChanged({timestamp: timestamp, type: 'TitleId', loaded: data.Env.TitleId, read: script.titleId}, args, data);
+        }
+        if (script.version !== data.Env.CloudScriptVersion) {
+            onEnvChanged({timestamp: timestamp, type: 'CloudScriptVersion', loaded: data.Env.CloudScriptVersion, read: script.version}, args, data);
+        }
+        if (script.revision !== data.Env.CloudScriptRevision) {
+            onEnvChanged({timestamp: timestamp, type: 'CloudScriptRevision', loaded: data.Env.CloudScriptRevision, read: script.revision}, args, data);
+        }
+        if (server.version !== data.Env.PlayFabServerVersion) {
+            onEnvChanged({timestamp: timestamp, type: 'PlayFabServerVersion', loaded: data.Env.CloudScriptRevision, read: server.version}, args, data);
+        }
+    } catch (e) { throw e; }
+}
 
 handlers.RoomCreated = function (args) {
     'use strict';
@@ -380,7 +416,7 @@ handlers.RoomCreated = function (args) {
             if (undefinedOrNull(data.LoadEvents)) {
                 data.LoadEvents = {};
             }
-            data.LoadEvents[timestamp] = {ActorNr: args.ActorNr, UserId: args.UserId};
+            data.LoadEvents[timestamp] = {ActorNr: args.ActorNr, UserId: args.UserId, CreateIfNotExists: args.CreateIfNotExists};
             try { createSharedGroup(args.GameId); } catch (x) {}
             onGameLoaded(args, data);
             updateSharedGroupData(args.GameId, data);
@@ -683,3 +719,4 @@ handlers.GetGameList = function (args) {
         return {ResultCode: 100, Message: e.name + ': ' + e.message + ' @' + String(e.stack)};
     }
 };
+
