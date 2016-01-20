@@ -177,6 +177,8 @@ function checkWebhookArgs(args, timestamp) {
     case 'Load':
         if (undefinedOrNull(args.CreateIfNotExists)) {
             throw new PhotonException(1, msg + 'CreateIfNotExists', timestamp, args);
+        } else if (args.CreateIfNotExists === true && args.ActorNr !== 0) {
+            throw new PhotonException(9, 'ActorNr=' + args.ActorNr + ' and CreateIfNotExists=true', timestamp, args);
         }
         break;
     case 'Create':
