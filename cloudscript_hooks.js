@@ -1,6 +1,6 @@
 /*****************************************************************************************************************************/
 
-// implement your logic to the following callbacks and do not worry about how to load and save Photon room state
+// implement your logic into the following callbacks and do not worry about how to load and save Photon room state
 // constraints: 
 // 1. ONLY update 'data' argument 
 // 2. do not delete or overwrite existing properties of 'data' argument
@@ -104,7 +104,7 @@ function onEnvChanged(change, args, data) {
     case 'CloudScriptRevision': // tip: you may want to update client or server game data
         // throw new PhotonException(101, 'CloudScriptRevision mismatch', change.timestamp, {Change: change, Webhook: args, GameData: data});
         break;
-    case 'PlayFabServerVersion':
+    case 'PlayFabServerVersion': // you can safely skip this
         // throw new PhotonException(101, 'PlayFabServerVersion mismatch', change.timestamp, {Change: change, Webhook: args, GameData: data});
         break;
     }

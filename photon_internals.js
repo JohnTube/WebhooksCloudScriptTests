@@ -35,18 +35,16 @@ function isString(obj) {
 
 function getISOTimestamp() {
     'use strict';
-    try { return (new Date()).toISOString() + Math.random(); } catch (e) { throw e; }
+    return (new Date()).toISOString() + Math.random();
 }
 
 function logException(timestamp, data, message) {
     'use strict';
-    try {
-        //TEMPORARY solution until log functions' output is available from GameManager
-        return server.SetTitleData({
-            Key: timestamp,
-            Value: JSON.stringify({Message: message, Data: data})
-        });
-    } catch (e) { throw e; }
+    //TEMPORARY solution until log functions' output is available from GameManager
+    return server.SetTitleData({
+        Key: timestamp,
+        Value: JSON.stringify({Message: message, Data: data})
+    });
 }
 
 function getGamesListId(playerId) {
@@ -57,10 +55,23 @@ function getGamesListId(playerId) {
     return playerId + '_GamesList';
 }
 
+function PhotonException(code, msg, timestamp, data) {
+    'use strict';
+	this.ResultCode = code;
+	this.Message = msg;
+    this.Timestamp = timestamp;
+    this.Data = data;
+    logException(timestamp, data, msg);
+    //this.Stack = (new Error()).stack;
+}
+
+PhotonException.prototype = Object.create(Error.prototype);
+PhotonException.prototype.constructor = PhotonException;
+
 function createSharedGroup(id) {
     'use strict';
-    try { return server.CreateSharedGroup({SharedGroupId : id});
-        } catch (e) { /*logException(getISOTimestamp(), 'createSharedGroup:' + id, String(e.stack));*/ throw e; }
+    try { server.CreateSharedGroup({SharedGroupId : id});
+        } catch (e) { /*logException(getISOTimestamp(), e, 'createSharedGroup:' + id);*/throw e; }
 }
 
 function updateSharedGroupData(id, data) {
@@ -73,7 +84,7 @@ function updateSharedGroupData(id, data) {
             }
         }
         return server.UpdateSharedGroupData({ SharedGroupId: id, Data: data });
-    } catch (e) { logException(getISOTimestamp(), 'updateSharedGroupData(' + id + ', ' + JSON.stringify(data) + ')', String(e.stack)); throw e; }
+    } catch (e) { logException(getISOTimestamp(), e, 'updateSharedGroupData(' + id + ', ' + JSON.stringify(data) + ')'); throw e; }
 }
 
 function getSharedGroupData(id, keys) {
@@ -91,12 +102,12 @@ function getSharedGroupData(id, keys) {
             }
         }
         return data;
-    } catch (e) { logException(getISOTimestamp(), 'getSharedGroupData:' + id + ',' + JSON.stringify(keys), String(e.stack)); throw e; }
+    } catch (e) { logException(getISOTimestamp(), e, 'getSharedGroupData:' + id + ',' + JSON.stringify(keys)); throw e; }
 }
 
 function deleteSharedGroup(id) {
     'use strict';
-    try { return server.DeleteSharedGroup({SharedGroupId : id}); } catch (e) { logException(getISOTimestamp(), 'deleteSharedGroup:' + id, String(e.stack)); throw e; }
+    try { return server.DeleteSharedGroup({SharedGroupId : id}); } catch (e) { logException(getISOTimestamp(), e, 'deleteSharedGroup:' + id); throw e; }
 }
 
 function getSharedGroupEntry(id, key) {
@@ -110,28 +121,13 @@ function updateSharedGroupEntry(id, key, value) {
         var data = {};
         data[key] = value;
         return updateSharedGroupData(id, data);
-    } catch (e) { logException(getISOTimestamp(), 'updateSharedGroupEntry:' + id + ',' + key + ',' + value, String(e.stack)); throw e; }
+    } catch (e) { logException(getISOTimestamp(), e, 'updateSharedGroupEntry:' + id + ',' + key + ',' + value); throw e; }
 }
 
 function deleteSharedGroupEntry(id, key) {
     'use strict';
-    try { return updateSharedGroupEntry(id, key, null); } catch (e) { logException(getISOTimestamp(), 'deleteSharedGroupEntry:' + id + ',' + key, String(e.stack)); throw e; }
+    try { return updateSharedGroupEntry(id, key, null); } catch (e) { logException(getISOTimestamp(), e, 'deleteSharedGroupEntry:' + id + ',' + key); throw e; }
 }
-
-
-
-function PhotonException(code, msg, timestamp, data) {
-    'use strict';
-	this.ResultCode = code;
-	this.Message = msg;
-    this.Timestamp = timestamp;
-    this.Data = data;
-    logException(timestamp, data, msg);
-    //this.Stack = (new Error()).stack;
-}
-
-PhotonException.prototype = Object.create(Error.prototype);
-PhotonException.prototype.constructor = PhotonException;
 
 var LeaveReason = { ClientDisconnect: '0', ClientTimeoutDisconnect: '1', ManagedDisconnect: '2', ServerDisconnect: '3', TimeoutDisconnect: '4', ConnectTimeout: '5',
                     SwitchRoom: '100', LeaveRequest: '101', PlayerTtlTimedOut: '102', PeerLastTouchTimedout: '103', PluginRequest: '104', PluginFailedJoin: '105' };
@@ -367,7 +363,7 @@ handlers.RoomCreated = function (args) {
             return {ResultCode: 0, Message: 'OK'};
         } else if (args.Type === 'Load') {
             data = loadGameData(args.GameId);
-            logException(timestamp, data, 'loadedGameData');
+            //logException(timestamp, data, 'loadedGameData');
             if (undefinedOrNull(data.State)) {
                 if (args.CreateIfNotExists === false) {
                     throw new PhotonException(5, 'Room=' + args.GameId + ' not found', timestamp, {Webhook: args, CustomState: data});
